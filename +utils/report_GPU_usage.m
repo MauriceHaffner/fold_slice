@@ -56,22 +56,22 @@ function report_GPU_usage(gpu_id)
     % find memory use by the processes %     polyfit_order - -1 = dont assume anything about the removed phase, remove line fit in every horizontal line separatelly  
     [~,out] = system(sprintf('nvidia-smi | awk ''$2=="Processes:" {p=1} p && $2 == %i && $3 > 0 {print $6}''',gpu.Index-1));
     out = splitlines(out); 
-    for ii = 1:length(out)-1
-        memory_use(ii) = str2num(replace(out{ii}, 'MiB', ''));
-    end
+    %for ii = 1:length(out)-1
+    %    memory_use(ii) = str2num(replace(out{ii}, 'MiB', ''));
+    %end
     
-    for ii = 1:length(pids)
-      [~,out] = system(sprintf('ps aux | grep %i | awk ''{print $1}''| head -n1', pids(ii)));
-       user_list{ii} = out(1:end-1);
-    end
-    users = unique(user_list); 
-    for ii = 1:length(users)
-        user_memory(ii) = sum(memory_use(ismember(user_list, users{ii}))); 
-    end
+    %for ii = 1:length(pids)
+    %  [~,out] = system(sprintf('ps aux | grep %i | awk ''{print $1}''| head -n1', pids(ii)));
+    %   user_list{ii} = out(1:end-1);
+    %end
+    %users = unique(user_list); 
+    %for ii = 1:length(users)
+    %    user_memory(ii) = sum(memory_use(ismember(user_list, users{ii}))); 
+    %end
     
-    utils.verbose(0,'Following users have processes on the selected GPU %i:', gpu.Index);
-    for  ii = 1:length(users)
-        utils.verbose(0, 'User: %s \t Used memory: %4.3gGB', users{ii} ,user_memory(ii)/1e3)
-    end
+    %utils.verbose(0,'Following users have processes on the selected GPU %i:', gpu.Index);
+    %for  ii = 1:length(users)
+    %    utils.verbose(0, 'User: %s \t Used memory: %4.3gGB', users{ii} ,user_memory(ii)/1e3)
+    %end
     
 end

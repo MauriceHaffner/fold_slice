@@ -1,58 +1,101 @@
-%% INITIALIZE TEST TEMPLATE 
-% check / set default parameters for the test scripts 
+%% TEST ALL ENGINES IN PTYCHOSHELVES TOOLKIT
+% run this script to automatically test 
+% all common features of the ptychoshelves toolkit 
+% - GPU code will be tested only if a Matlab supported GPU is detected 
+% - Fast c_solver will be tested only on unix systems 
 
-%% check initial paths 
-if ~exist('ptycho_path','var')
-    ptycho_path = fileparts(mfilename('fullpath')); 
-    ptycho_path = replace(ptycho_path, 'tests', ''); 
+
+close all
+clear all
+
+mkdir ./tomo
+addpath ./tomo
+
+%% %%%%%%%%% SET BASIC PATHS %%%%%%%%%%%%%%%%
+base_package_path = '/users/stud/haffnerm/Ptychoshelves/fold_slice';  % use automatic search for the cSAXS_matoab_base package 
+ptychoshelves_path = fileparts(mfilename('fullpath'));   % path to this ptychoshelves package 
+% temporal_data_path = './temp/';  % directory to store temporal data created during tests 
+base_path ='./' ;   % working path 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% %%%%%%%%% SET PARAMS %%%%%%%%%%%%%%%%
+plot_results = true; 
+check_simulated_data = true;  % only tests quality using simulated datasets, no automatic detector of quality is implemented
+check_real_data = true;       % compares the achievable resolution with previous reconstructions; can be very time consuming
+verbose_level = -1;           % default = -1 -> no verbosity, only in case of crash 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%% add the relevant paths 
+addpath(base_package_path)
+addpath(ptychoshelves_path)
+addpath(fullfile(ptychoshelves_path, 'tests'))
+import utils.*
+
+
+
+%% run different test templates 
+if check_simulated_data
+disp( 'TESTING ENGINES ON CPU')
+run('CPU_engines_test.m')
+disp( 'TESTING MULTILAYER ENGINES ON CPU')
+run('CPU_multilayer_test.m')
+disp( 'TESTING ENGINES WITH BINNING')
+run('CPU_binning_test.m')
+disp( 'TESTING CPU-BASED LOW COHERENCE PTYCHO ')
+run('CPU_engines_test_low_coherence.m')
+
+
+if gpuDeviceCount > 0
+    disp('TESTING GPU-BASED ENGINES')
+    run('GPU_engines_test.m')
+    disp( 'TESTING GPU-BASED MULTILAYER EXTENSION')
+    run('GPU_multilayer_test.m')
+    disp( 'TESTING GPU-BASED UPSAMPLED NEARFIELD PTYCHO ')
+    run('GPU_nearfield_test.m')
+    disp( 'TESTING GPU-BASED LOW COHERENCE PTYCHO ')
+    run('GPU_engines_test_low_coherence.m')
+    disp( 'TESTING OFFAXIS PTYCHO ')
+    run('GPU_offaxis_ptycho_test.m')
+    disp( 'TESTING GPU-BASED PTYCHO WITH SCAN MIRRORING, SHARING')
+    run('GPU_engines_test_mirror_scans.m')
+    disp( 'TESTING GPU-BASED PTYCHO WITH SHIFTED SCAN SHARING')
+    run('GPU_engines_test_shifted_scan_sharing.m')
+    disp( 'TESTING GPU-BASED PTYCHO GEOMETRY REFINEMENT WITH SCAN MIRRORING, SHARING')
+    run('GPU_engines_refine_geometry.m')
+    disp( 'TESTING GPU-BASED PTYCHO CAMERA POSITION REFINEMENT WITH SCAN MIRRORING, SHARING')
+    run('GPU_engines_camera_geometry.m')
 end
-if ~exist('temporal_data_path', 'var'); temporal_data_path = './temp/'; end
-if ~exist('base_path', 'var'); base_path = './'; end
-if ~exist('plot_results', 'var'); plot_results = false; end
-if ~exist('plot_save_results', 'var'); plot_save_results = false; end
-if ~exist('verbose_level', 'var'); verbose_level = -2; end
-
-addpath(ptycho_path)
-
-
-
-%% run common template for initalization
-addpath(ptycho_path)
-run(fullfile( ptycho_path, 'template_ptycho'))%.m
-
-%% autoestimate the location of base package 
-p.cSAXS_matlab_path = core.find_base_package();
-if ~exist('+math/argmax.m','file')  % test existence of some function from the package 
-     addpath(p.cSAXS_matlab_path)
 end
-% make sure that it will be correct even when the current working folder is changed
-p.cSAXS_matlab_path = utils.abspath(p.cSAXS_matlab_path); 
 
+[~, host] = system('hostname');
+if strcmpi(host(1:2), 'ra') && check_real_data
+    disp( 'TESTING REAL DATASET (NeXus EIGER1p5M H5 - OMNY) ')
+    run('NeXusEiger1p5M_omny_test.m');
+    disp( 'TESTING REAL DATASET (EIGER1p5M H5 - OMNY) ')
+    run('Eiger1p5M_omny_test.m');
+%    disp( 'TESTING REAL DATASET (PILATUS CBF - OMNY) ')
+%    run('Pilatus_omny_test.m');
+elseif check_real_data
+    warning('Tests of the real datasets is implemented only for the ra-cluster in PSI')
+end
 
-%% general settings
-p = rmfield(p, 'engines'); 
-p.   base_path = base_path;                           % the basic working path 
-p.   scan_number = [];                                % leave empty for artificial data                
-p.   src_metadata = 'artificial';                    % load meta data from file; currently only 'spec' is supported;
-p.   prepare.data_preparator = 'matlab';                           % data preparator; 'python' or 'matlab' 
-p.   verbose_level = verbose_level; 
+disp( 'TESTING PLOTTING ')
+run('test_plotting.m')
 
-%% plotting
-p.   save.external = false;                           % Use a new Matlab session to run save final figures (saves ~6s per reconstruction). Please be aware that this might lead to an accumulation of Matlab sessions if your single reconstruction is very fast.
-p.   plot.prepared_data = false;                         % plot prepared data
-p.   save.store_images = 1;                                       % Write nice jpegs in [p.base_path,'analysis/online/ptycho/'] if p.use_display = 0 then the figures are opened invisible in order to create the nice layout. It writes images in analysis/online/ptycho
-p.   plot.fov_box = 1;                                      % Plot the scanning FOV box on the object (both phase and amplitude)
-p.   plot.log_scale = [1 1];                                      % Plot on log scale for x and y
-p.   plot.positions = 1;                                    % Plot the scanning positions
-if plot_results
-    p.   plot.interval = 100; 
+if exist('+ptychotomo/', 'dir') && strcmpi(input('Do you want to test iterative multilayer-ptychotomography? [y/N]','s'), 'y')
+    disp('TESTING PTYCHOTOMOGRAPHY, IT CAN TAKE A WHILE ... ')
+    run('GPU_multilayer_3D_test.m')
 else
-    p.   plot.interval = inf; 
+    disp('Skipping')
 end
-%% io
-p.   ptycho_matlab_path = '';                               % cSAXS ptycho package path
-p.   prepare_data_path = temporal_data_path; 
-clear eng eng0 
+
+    
+disp( 'TESTING FINISHED')
+
+
+
 
 
 % Academic License Agreement
@@ -61,8 +104,8 @@ clear eng eng0
 %
 % Introduction 
 % •	This license agreement sets forth the terms and conditions under which the PAUL SCHERRER INSTITUT (PSI), CH-5232 Villigen-PSI, Switzerland (hereafter "LICENSOR") 
-%   will grant you (hereafter "LICENSEE") a royalty-free, non-exclusive license for academic, non-commercial purposes only (hereafter "LICENSE") to use the cSAXS 
-%   ptychography MATLAB package computer software program and associated documentation furnished hereunder (hereafter "PROGRAM").
+%   will grant you (hereafter "LICENSEE") a royalty-free, non-exclusive license for academic, non-commercial purposes only (hereafter "LICENSE") to use the PtychoShelves 
+%   computer software program and associated documentation furnished hereunder (hereafter "PROGRAM").
 %
 % Terms and Conditions of the LICENSE
 % 1.	LICENSOR grants to LICENSEE a royalty-free, non-exclusive license to use the PROGRAM for academic, non-commercial purposes, upon the terms and conditions 
@@ -81,20 +124,29 @@ clear eng eng0
 %       in the commercial use, application or exploitation of works similar to the PROGRAM.
 % 5.	LICENSEE agrees that it shall make the following acknowledgement in any publication resulting from the use of the PROGRAM or any translation of the code into 
 %       another computing language:
-%       "Data processing was carried out using the cSAXS ptychography MATLAB package developed by the Science IT and the coherent X-ray scattering (CXS) groups, Paul 
+%       "Data processing was carried out using the PtychoShelves package developed by the Science IT and the coherent X-ray scattering (CXS) groups, Paul 
 %       Scherrer Institut, Switzerland."
 %
-% Additionally, any publication using the package, or any translation of the code into another computing language should cite for difference map:
+% Additionally, any publication using the package, or any translation of the code into another computing language should cite 
+% K. Wakonig, H.-C. Stadler, M. Odstrčil, E.H.R. Tsai, A. Diaz, M. Holler, I. Usov, J. Raabe, A. Menzel, M. Guizar-Sicairos, PtychoShelves, a versatile 
+% high-level framework for high-performance analysis of ptychographic data, J. Appl. Cryst. 53(2) (2020). (doi: 10.1107/S1600576720001776)
+% and for difference map:
 % P. Thibault, M. Dierolf, A. Menzel, O. Bunk, C. David, F. Pfeiffer, High-resolution scanning X-ray diffraction microscopy, Science 321, 379–382 (2008). 
 %   (doi: 10.1126/science.1158573),
 % for maximum likelihood:
 % P. Thibault and M. Guizar-Sicairos, Maximum-likelihood refinement for coherent diffractive imaging, New J. Phys. 14, 063004 (2012). 
 %   (doi: 10.1088/1367-2630/14/6/063004),
+% for LSQ-ML:
+% M. Odstrčil, A. Menzel, and M. Guizar-Sicairos, Iterative least-squares solver for generalized maximum-likelihood ptychography, Opt. Express 26(3), 3108 (2018). 
+%   (doi: 10.1364/OE.26.003108),
 % for mixed coherent modes:
 % P. Thibault and A. Menzel, Reconstructing state mixtures from diffraction measurements, Nature 494, 68–71 (2013). (doi: 10.1038/nature11806),
 % and/or for multislice:
 % E. H. R. Tsai, I. Usov, A. Diaz, A. Menzel, and M. Guizar-Sicairos, X-ray ptychography with extended depth of field, Opt. Express 24, 29089–29108 (2016). 
-%   (doi: 10.1364/OE.24.029089).
+%   (doi: 10.1364/OE.24.029089),
+% and/or for OPRP:
+% M. Odstrcil, P. Baksh, S. A. Boden, R. Card, J. E. Chad, J. G. Frey, W. S. Brocklesby,  Ptychographic coherent diffractive imaging with orthogonal probe relaxation. 
+% Opt. Express 24.8 (8360-8369) 2016. (doi: 10.1364/OE.24.008360).
 % 6.	Except for the above-mentioned acknowledgment, LICENSEE shall not use the PROGRAM title or the names or logos of LICENSOR, nor any adaptation thereof, nor the 
 %       names of any of its employees or laboratories, in any advertising, promotional or sales material without prior written consent obtained from LICENSOR in each case.
 % 7.	Ownership of all rights, including copyright in the PROGRAM and in any material associated therewith, shall at all times remain with LICENSOR, and LICENSEE 
@@ -107,4 +159,4 @@ clear eng eng0
 %       in particular of patent with international application number PCT/GB2005/001464. The LICENSOR explicitly declares not to indemnify the users of the software 
 %       in case Phase Focus or any other third party will open a legal action against the LICENSEE due to the use of the program.
 % 10.	This Agreement shall be governed by the material laws of Switzerland and any dispute arising out of this Agreement or use of the PROGRAM shall be brought before 
-%       the courts of Zürich, Switzerland. 
+%       the courts of Zürich, Switzerland.

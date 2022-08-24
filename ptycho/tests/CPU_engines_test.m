@@ -10,7 +10,8 @@ run(fullfile( fileparts(mfilename('fullpath')), 'init_test.m'))
 
 %% general settings
 p.   artificial_data_file = 'tests/test_data.m';     % artificial data parameters 
-p.   asize = [192 192];                              % size of the reconstruction probe 
+p.   asize = [192 192];                              % size of the reconstruction probe
+p.   z = 5; 
 
 
 

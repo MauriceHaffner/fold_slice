@@ -105,6 +105,11 @@ f_pos = strfind(data_req, '/tmp');
 data_req = strsplit(data_req(f_pos(1):end), '.');
 data = webread([server data_req{1} '.dat']);
 
+%Check if its numeric (ASCII)
+if isnumeric(data)
+    data = char(data).';
+end
+
 % split data by line breaks
 data = strsplit(data, '\n');
 

@@ -136,8 +136,8 @@ cd(fullfile(fileparts(mfilename('fullpath')), '../'))
 addpath('./')
 addpath(core.find_base_package)
 addpath('./utils')
-addpath('../cSAXS_matlab_tomo/')
-addpath('../cSAXS_matlab_tomo/utils/')
+%addpath('../cSAXS_matlab_tomo/')
+%addpath('../cSAXS_matlab_tomo/utils/')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% user settings %%%%%%%%%%%
@@ -193,8 +193,8 @@ run(fullfile( ptycho_path,p.artificial_data_file))
 
 
 %% io
-p.   ptycho_matlab_path = '';                               % cSAXS ptycho package path
-p.   cSAXS_matlab_path = fullfile(ptycho_path, '../cSAXS_matlab_base');                               % cSAXS package path
+p.   ptycho_matlab_path = '/users/stud/haffnerm/Ptychoshelves/fold_slice/ptycho';                               % cSAXS ptycho package path
+p.   cSAXS_matlab_path = '/users/stud/haffnerm/Ptychoshelves/fold_slice';%fullfile(ptycho_path, '../cSAXS_matlab_base');                               % cSAXS package path
 p.   prepare_data_path = temporal_data_path; 
 p.   use_display  = false; 
 
@@ -378,7 +378,7 @@ Npix_simulated_obj = size(pout.simulation.obj{1});
 %%  TEST FILTERED BACKPROPAGATION %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- addpath('../cSAXS_matlab_tomo/')
+ addpath('/users/stud/haffnerm/Ptychoshelves/fold_slice/tomo/')
 
  obj_size_max = [0, 0]; 
 for ii = 1:Nangles 
@@ -458,7 +458,7 @@ title('Ideal reconstruction')
 
 %% unwrap data 
 
-addpath('../cSAXS_matlab_tomo/')
+addpath('/users/stud/haffnerm/Ptychoshelves/fold_slice/ptycho/tomo/')
 objects = objects(1:Nangles);
 position_offset = position_offset(1:Nangles, :);
 obj_size_max = [0, 0]; 
@@ -548,8 +548,8 @@ volData0_c = volData_c;
 par.queue_path = 'reconstruction'; 
 
 % reconstruct the data 
-addpath('../cSAXS_matlab_tomo/')
-addpath('../cSAXS_matlab_base/')
+%addpath('../cSAXS_matlab_tomo/')
+%addpath('../cSAXS_matlab_base/')
 
 % smooth volData_c -> make a poor initial guess 
 volData_c = utils.imgaussfilt3_fft(volData0_c, 10);
@@ -559,7 +559,7 @@ volData_c = utils.imgaussfilt3_fft(volData0_c, 10);
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 par.debug = false; 
 par.downsample_angles = 1; 
-par.Niter = 10;
+par.Niter = 3;%10;
 par.Niter_inner = 1; 
 
 %% set starting iteration for different actions 
@@ -571,15 +571,15 @@ par.ptycho_accel_start =  par.ptycho_ML_reconstruct_start+1 ;  % start momemntum
 par.plot_every = 10;   % seconds
 
 
-par.Nlayers_max = 32; % maximal number of reconstructed layers 
+par.Nlayers_max = 4;%32; % maximal number of reconstructed layers 
 par.apply_support = true; % apply support constraint around the reconstructed volume 
 par.smooth_reconstruction = false;  % apply smoothing filter on the reconstruction, helps agains artefacts fom the rotation 
-par.wait_time_solver = 10; % how long should the code wait for a projection before giving up 
+par.wait_time_solver = 20; % how long should the code wait for a projection before giving up 
 par.max_queue_length = 5;  % how many projection should be kept in the processing queue. More == better parallelism but more unstable solver 
 
 par.lambda = 0.5;  % relative update step length in gradient descent 
 
-par.prepare_data_path = './temp/S%05i/'; 
+par.prepare_data_path = '/users/stud/haffnerm/Ptychoshelves/fold_slice/ptycho/temp/S%05i'; %./temp/S%05i/'; 
 
 
 %% set constraints for the 3D reconstruction, it makes solver more stable 
@@ -682,6 +682,8 @@ volData_rec = ptychotomo.tomo_solver_distributed(par, volData_c, objects_prepare
 
 
 % clear temporal data 
-rmdir('./temp/', 's')
-rmdir('./reconstruction/', 's')
+%rmdir('./temp/', 's')
+rmdir('/users/stud/haffnerm/Ptychoshelves/fold_slice/ptycho/temp','s')
+%rmdir('./reconstruction/', 's')
+rmdir('/users/stud/haffnerm/Ptychoshelves/fold_slice/ptycho/reconstruction','s')
 

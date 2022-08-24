@@ -96,7 +96,11 @@ else
         else
             error('dk or d_alpha are not speficied!')
         end
-    else
+    else        
+        %warning('dim lambda: %i x %i', size(p.lambda,1), size(p.lambda,2))
+        %warning('dim z: %i x %i', size(p.z,1), size(p.z,2))
+        %warning('dim asize: %i x %i', size(p.asize,1), size(p.asize,2))
+        %warning('dim ds: %i  x %i', size(p.ds,1), size(p.ds,2))
         p.dx_spec = p.lambda*p.z ./ (p.asize*p.ds);                   % resolution in the specimen plane
     end
     p.dx_spec = p.dx_spec ./ cosd(p.sample_rotation_angles(1:2));      % account for a tilted sample ptychography      
