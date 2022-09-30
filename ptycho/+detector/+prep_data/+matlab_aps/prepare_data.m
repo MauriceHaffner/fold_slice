@@ -47,6 +47,7 @@ detStorage.check_ctr = check_ctr;
 
 %% load mask
 if isfield(p.detectors(scanID).params, 'mask') && ~isempty(p.detectors(scanID).params.mask)
+    verbose(0,'Loading mask from %s', p.detectors(scanID).params.mask);
     load(p.detectors(scanID).params.mask);
     detStorage.mask = logical(mask);
 elseif p.detectors(scanID).params.data_stored 

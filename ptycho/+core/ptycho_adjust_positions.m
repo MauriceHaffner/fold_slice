@@ -77,7 +77,6 @@ if isfield(p, 'spec') && (check_option(p.spec.motor,'coarse_motors') && length(p
 end
 
 
-
 % Convert to pixels
 p.positions = p.positions_real./p.dx_spec;
 
@@ -126,7 +125,6 @@ for jj=1:p.numscans
     end
 end
 p.share_pos = share_pos;
-
 
 end
 

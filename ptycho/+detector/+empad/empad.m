@@ -21,7 +21,7 @@ det.mask_saturated_value = [];          % mask pixels above given value
 det.mask_below_value = [];              % mask pixels below given value
 det.data_stored = true;                % false == data are generated "onfly", no need to load / store
 %det.geometry.sz = [1030 514];           % detector readout size
-det.geometry.sz = [256 256];           % detector readout size
+det.geometry.sz = [272,272]; %[256 256];           % detector readout size
 
 det.geometry.mask = [];                 % if the mask is larger than the readout 
                                         % geometry (det.geometry.sz), geometry.mask defines the readout for the mask

@@ -72,7 +72,7 @@ function cache = precalculate_ROI(self, cache, probe)
     import engines.GPU_MS.shared.*
             
     object_ROI = {round(self.Np_o(1)/2+(min(self.probe_positions_0(:,2)):max(self.probe_positions_0(:,2)))), ...
-        round(self.Np_o(2)/2+(min(self.probe_positions_0(:,1)):max(self.probe_positions_0(:,1))))};
+        round(self.Np_o(2)/2+(min(self.probe_positions_0(:,1)):max(self.probe_positions_0(:,1))))};  
     
     
     Np = size(probe,1);

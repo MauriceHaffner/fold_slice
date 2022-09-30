@@ -98,7 +98,6 @@ function [pos_update, probe_rotation,probe_scale,cache] = gradient_position_solv
     if ~isfield(cache, 'position_update_memory')
         cache.position_update_memory = {};
     end
-    
     cache.position_update_memory{iter}(ind,:) = pos_update;
    
     %% USE MOMENTUM ACCELERATION TO MAKE THE CONVERGENCE FASTER
@@ -169,7 +168,6 @@ function [pos_update, probe_rotation,probe_scale,cache] = gradient_position_solv
     if any(ind==1)
         verbose(1,'Grad pos corr -- AVG step  %3.3g px , acceleration = %4.1f', max(abs(pos_update(:))), ACC)
     end
-    
 end
     
 function [nom1, denom1, nom2, denom2] = get_coefs_shift(xi, P, dx_O, dy_O)

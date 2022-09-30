@@ -6,8 +6,8 @@
 % different folder from fold_slice 
 
 %% Step 2: load data
-data_dir = '/home/beams2/YJIANG/ptychography/electron/PrScO3/science/'; %change this
-load(strcat(data_dir,'sample_data_PrScO3.mat'))
+data_dir = '/users/stud/haffnerm/Ptychoshelves/data/'; %change this
+load('/users/stud/haffnerm/Ptychoshelves/data/sample_data_PrScO3.mat');
 
 %% Step 3: go back to .../fold_slice/ptycho and pre-process data
 addpath(strcat(pwd,'/utils_electron/'))

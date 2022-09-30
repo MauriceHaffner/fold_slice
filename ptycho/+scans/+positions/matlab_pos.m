@@ -93,8 +93,9 @@ for ii = 1:p.numscans
                 if strcmp(ext, 'm')
                     [~, positions_real, ~] = p.scan.custom_positions_source(p);
                 elseif strcmp(ext, 'mat')
-                    posi = load(p.scan.custom_positions_source, 'pos');
-                    positions_real = posi.pos;
+                    posi = load(p.scan.custom_positions_source, 'scan_positions');
+                    positions_real = posi.scan_positions * 1e10;
+                    %positions_real = flip(positions_real,2);
                     clear posi;
                 else
                     error('File extenstion %s is not supported.', ext)
@@ -105,14 +106,14 @@ for ii = 1:p.numscans
                 if exist([p.scan.custom_positions_source '.m'], 'file')
                     [~, positions_real, ~] = p.scan.custom_positions_source(p);
                 elseif exist([p.scan.custom_positions_source '.mat'], 'file')
-                    posi = load(p.scan.custom_positions_source, 'pos');
-                    positions_real = posi.pos;
+                    posi = load(p.scan.custom_positions_source, 'scan_positions')
+                    positions_real = posi.scan_positions.scan_positions;
                     clear posi;
                 else
                     error('Could not find function or data file %s', p.scan.custom_positions_source);
                 end
             end
-            
+  
         case 'custom_GPU' %added by YJ for customized GPU engines' output
             if ~isempty(p.scan.custom_positions_source) %guess the position file name from base path
                 pos_file = p.scan.custom_positions_source;

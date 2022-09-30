@@ -21,9 +21,8 @@ function [self, cache, fourier_error] =  PIE(self,par,cache,fourier_error,iter)
         import engines.GPU_MS.PIE.*
         
         %% MULTILAYER EXTENSION fix or remove in future
-        par.probe_modes = max(par.Nlayers, par.probe_modes); 
-        par.object_modes = max(par.Nlayers, par.object_modes); 
-        
+        %par.probe_modes = max(par.Nlayers, par.probe_modes); 
+        %par.object_modes = max(par.Nlayers, par.object_modes); 
         
         if par.variable_probe
             % expand the probe to the full size
@@ -31,7 +30,7 @@ function [self, cache, fourier_error] =  PIE(self,par,cache,fourier_error,iter)
             self.probe{1} = reshape(self.probe{1},prod(self.Np_p),[]);
             self.probe{1} = reshape(self.probe{1} * self.probe_evolution', self.Np_p(1), self.Np_p(2), []);
         end
-        par.multilayer_object = par.Nlayers > 1; 
+        par.multilayer_object = par.Nlayers > 1;
         par.multilayer_probe = false;  % not supported anymore 
         probe_amp_corr = [0,0]; 
 
@@ -249,8 +248,12 @@ function [self, cache, fourier_error] =  PIE(self,par,cache,fourier_error,iter)
                         (par.multilayer_object && ll > 1 && ll <= par.probe_modes)
                         % only in case of first layer probe, otherwise update interprobes
                     
-                    beta_probe = get_vals(cache.beta_probe,g_ind) .* get_vals(cache.beta_xi,g_ind);                       
-                            
+                    %try
+                        %beta_probe = get_vals(cache.beta_probe,g_ind) .* get_vals(cache.beta_xi,g_ind);                       
+                    %catch
+                    beta_probe = get_vals(cache.beta_probe,g_ind) * get_vals(cache.beta_xi,g_ind);
+                    %end    
+                        
                     if is_method(par, {'ePIE', 'hPIE'})
                         %%%%%%%%%%% update probe %%%%%%%%%%%%%%%%%%%%%%%%%%
                         probe{ll} = Gfun(@upd_probe_Gfun,probe{ll},probe_update, beta_probe); 
@@ -269,7 +272,7 @@ function [self, cache, fourier_error] =  PIE(self,par,cache,fourier_error,iter)
                         end
                     end
                 end
-                             
+
                 if iter > par.probe_fourier_shift_search && ll == 1
                     % search position corrections in the Fourier space, use
                     % only informatiom from the first mode, has to be after
@@ -278,17 +281,17 @@ function [self, cache, fourier_error] =  PIE(self,par,cache,fourier_error,iter)
                 end
                 if  iter >= par.probe_position_search
                     % find optimal position shift that minimize chi{1} in current iteration 
-                    [pos_update, cache] = gradient_position_solver(self, chi, obj_proj{1},probe{1,layer}, g_ind, iter, cache);
-                    self.modes{1}.probe_positions(g_ind,:)=self.modes{1}.probe_positions(g_ind,:)+pos_update;
+                    [pos_update, cache] = gradient_position_solver(self, chi, obj_proj{1},probe{1,layer}, g_ind, iter, cache,par);
+                    self.modes{1}.probe_positions(g_ind,:)=self.modes{1}.probe_positions(g_ind,:)+pos_update;                    
                 end
-                %%%%%%%%%%%%%%%%%%%%% OBJECT UPDATE   %%%%%%%%%%%%%%%%%%%%% %%%%%%%%%%%%%%
+                %%%%%%%%%%%%%%%%%%%%% OBJECT UPDATE   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 if iter >= min([par.object_change_start]) && ....
                         ( ll <= max(par.Nlayers, par.object_modes) || par.apply_multimodal_update ) 
                     if ll ~= 1 && ~(par.multilayer_object || par.multilayer_probe) ; continue; end
 
                     if iter >= par.object_change_start  % && ~(par.multilayer_probe && ll > 1)  % the objects are just empty 
-                    
-                        beta_object =  get_vals(cache.beta_object,g_ind) .* get_vals(cache.beta_xi,g_ind);
+                                            
+                        beta_object =  get_vals(cache.beta_object,g_ind) * get_vals(cache.beta_xi,g_ind);
                         if par.share_object
                             obj_ids = 1;  % update only the first object 
                         else
@@ -343,13 +346,11 @@ function [self, cache, fourier_error] =  PIE(self,par,cache,fourier_error,iter)
             
         end
        
-        
-
-       
+             
        if par.multilayer_object
            self.probe = self.probe(1); 
        end
- 
+        
         if par.variable_probe && iter >= par.probe_change_start
             [self.probe{1}, self.probe_evolution] = apply_SVD_filter(self.probe{1}, par.variable_probe_modes+1,  self.modes{1});
         elseif par.variable_probe && iter < par.probe_change_start

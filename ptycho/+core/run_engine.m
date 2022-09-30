@@ -74,7 +74,6 @@ function [p, fdb] = run_engine(p, ieng)
     end
     %% load settings from engine structure to the param structure 
     [p_eng, items] = update_structure(p_eng, p_eng.engines{ieng});
-    
     %% call engine
     core.engine_status(0);
     engine_fnct = str2func(['engines.' p.engines{ieng}.name]);

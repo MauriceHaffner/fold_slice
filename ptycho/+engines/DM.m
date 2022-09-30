@@ -585,8 +585,7 @@ end
     av_rfact = av_rfact / av_rfact_nrm;
     
     p.object = avob;
-
-    
+        
     % save additional feedback into engine's fdb variable
     fdb.rfact = rfact;
     fdb.av_rfact = av_rfact;

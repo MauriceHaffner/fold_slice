@@ -51,9 +51,13 @@ end
 verbose(2, sprintf('Using center: (%d, %d)', ctr(1), ctr(2)));
 detStorage.ctr = ctr;
 
+%if p.ignore_padding
+    %detStorage.lim_inf = ctr-p.ignore_padded_area.asize/2;
+    %detStorage.lim_sup = ctr+p.ignore_padded_area.asize/2-1;
 if ~p.prealign_FP
     detStorage.lim_inf = ctr-p.asize/2;
     detStorage.lim_sup = ctr+p.asize/2-1;
+
 else
     detStorage.lim_inf = ctr-p.prealign.asize/2;
     detStorage.lim_sup = ctr+p.prealign.asize/2-1;

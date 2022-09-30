@@ -154,7 +154,7 @@ function [ p, fdb ] = ML_MS_rot( p )
     end
     
     %% ===== 3ML main =====
-    p.ms_opt_flags_local = p.ms_opt_flags;  
+    p.ms_opt_flags_local = p.ms_opt_flags;
     
     if p.ms_opt_flags(3)
         N_iter_outer = ceil(p.ms_opt_iter/p.ms_opt_z_param(1)) + floor(p.ms_opt_iter/p.ms_opt_z_param(1));

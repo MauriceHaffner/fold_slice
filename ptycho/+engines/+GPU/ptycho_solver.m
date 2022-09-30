@@ -177,6 +177,7 @@ while iter <= par.number_iterations %modified by YJ: use while loop for time-res
     end
 
     t_start = tic;
+
     if  iter > 0.9*par.number_iterations && is_method(par, 'DM')
         for ll = 1:length(self.object)
             object_avg{ll} = object_avg{ll}  + self.object{ll}; 
@@ -280,7 +281,7 @@ while iter <= par.number_iterations %modified by YJ: use while loop for time-res
             cache.MAX_ILLUM(ll) = max2(cache.illum_sum_0{ll});
         end
     end
-    
+
     %% improve convergence speed by gradient acceleration 
     if is_method(par, 'MLc') && iter >= par.accelerated_gradients_start
         [self, cache] = accelerate_gradients(self, par, cache, iter); 
@@ -630,8 +631,8 @@ while iter <= par.number_iterations %modified by YJ: use while loop for time-res
         %% save object phase
         if any(ismember({'obj_ph','obj_ph_sum','obj_ph_stack'}, par.save_images))
             object_temp = Ggather(self.object{1});
-            object_roi_temp = object_temp(cache.object_ROI{:},:);
-            N_obj_roi = size(object_roi_temp);
+            object_roi_temp = object_temp(cache.object_ROI{:},:);            
+            N_obj_roi = [cache.object_ROI{1},cache.object_ROI{2}];
             O_phase_roi = zeros(N_obj_roi(1), N_obj_roi(2), par.Nlayers);
             for ll=1:par.Nlayers
                 object_temp = Ggather(self.object{ll});
@@ -653,7 +654,7 @@ while iter <= par.number_iterations %modified by YJ: use while loop for time-res
                 end
                 saveName = strcat('obj_phase_roi_Niter',num2str(iter),'.tiff');
                 saveDir = strcat(par.fout,'/obj_phase_roi/');
-                if ~exist(saveDir, 'dir'); mkdir(saveDir); end
+                if ~exist(saveDir, 'dir'); mkdir(saveDir); end    
                 save_tiff_image(O_phase_roi2,strcat(saveDir,saveName));
             end
             if ismember('obj_ph_stack', par.save_images)

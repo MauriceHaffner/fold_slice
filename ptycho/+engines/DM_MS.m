@@ -151,6 +151,7 @@ if p.probe_mask_bool
         to_threshold = (x.^2 + y.^2);
         clear x y
     end
+    % !!!
     to_threshold_flat = reshape(to_threshold, [prod(p.asize) 1]);
     [~, ind] = sort(to_threshold_flat);
     probe_mask_flat = zeros([prod(p.asize) 1]);
@@ -830,10 +831,10 @@ for ii = 1:p.numscans
     end
     object = ones(size(object_layer{obnum}{obmode}{n})); 
     for n = 1:N_layer 
-        object = object .* object_layer{obnum}{obmode}{n};   % Combine all layers
+        object = object .* object_layer{obnum}{obmode}{n};   % Combine all layers       
         p.object_layers{n} = object_layer{obnum}{obmode}{n}; % For each scan (object number) 
     end   
-    p.object{obnum} = object;
+    p.object{obnum} = object;    
     p.probes = probe_layer{prnum}{prmode}{1}; %probes(:,:,prnum,:);
 end
 
