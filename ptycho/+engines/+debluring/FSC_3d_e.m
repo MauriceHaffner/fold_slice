@@ -1,11 +1,11 @@
-% resolution = fourier_shell_corr_3D_2e(image,param)
+% integrated_resolution = fourier_shell_corr_3D_2e(image,param)
 % Computes the Fourier shell correlation for a single image by splitting
 % into even-even, odd-odd, even-odd and odd-even parity sites. Images can be complex-valued.
 % Can handle non-cube arrays but assumes the voxel is isotropic
 % Modified by YJ for electron ptychography
 %
 % Inputs:
-%     **fftkernel         fast fourier transform of convolution kernel
+%     **kernel         fast fourier transform of convolution kernel
 %     **image             image
 %     **param             Structure containing parameters
 % *optional*: 
@@ -59,7 +59,7 @@
 %    proper use and the correctness of the results.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function resolution= FSC_3d_e(fftkernel,image,param)
+function integrated_resolution= FSC_3d_e(kernel,image,param)
 import math.isint
 import utils.*
 import engines.debluring.*
@@ -70,12 +70,12 @@ if nargin < 3
 end
 
 parser = inputParser;
-parser.addParameter('SNRt', 0.5 , @isnumeric )                       % SNRt = 0.2071 for 1/2 bit threshold for average of 2 images
+parser.addParameter('SNRt', 0.5 , @isnumeric )                          % SNRt = 0.2071 for 1/2 bit threshold for average of 2 images
                                                                         % SNRt = 0.5 for 1 bit threshold for average of 2 images
 parser.addParameter('thickring',  0 , @isnumeric )                      % thick ring in Fourier domain
 parser.addParameter('auto_binning',  false , @islogical )               % bin FRC before calculating rings, it makes calculations faster 
 parser.addParameter('max_rings',  200 , @isnumeric )                    % maximal number of rings if autobinning is used 
-parser.addParameter('freq_thr',  0 , @isnumeric )                    % mimimal freq value where resolution is detected  
+parser.addParameter('freq_thr',  0 , @isnumeric )                       % mimimal freq value where resolution is detected  
 parser.addParameter('pixel_size',  []  )                                % size of pixel in angstrom
 parser.addParameter('mask',  [], @(x)(isnumeric(x) || islogical(x)) )   % array, equal to 0 for ignored pixels of the fft space and 1 for rest 
 
@@ -95,7 +95,7 @@ end
 
 image_real = real(image);
 image_imag = imag(image);
-deconv_image_imag = deconvlucy(image_imag, fftkernel,param.lucy_iters,param.SNRt);
+deconv_image_imag = deconvlucy(image_imag, kernel,param.lucy_iters,param.damping_threshold);
 deconv_image_total = image_real + 1j * deconv_image_imag;
 sub_images = image_split(deconv_image_total);
 split_masks = image_split(param.mask);
@@ -211,28 +211,32 @@ n = n*prod(bin);  % account for larger number of elements in the binned voxels
 T = (  param.SNRt + 2*sqrt(param.SNRt)./sqrt(n+eps) + 1./sqrt(n)  )./...
     (  param.SNRt + 2*sqrt(param.SNRt)./sqrt(n+eps) + 1  );
 
-freq_fine = 0:1e-3:max(freq);
+freq_fine = 0:1e-1:max(freq); %1e-3
 freq_fine_normal = freq_fine/max(freq);
 
-FSC_fine = max(0,interpn(freq, FSC, freq_fine, 'spline')); % spline, linear
-T_fine = interpn(freq, T, freq_fine, 'spline');
+FSC_fine = max(0,interpn(freq, FSC, freq_fine, 'spline')); % spline, linear'spline'
 
-idx_intersect = abs(FSC_fine-T_fine)< param.correlation_threshold;
+integrated_resolution = trapz(freq_fine_normal,FSC_fine);
+
+%T_fine = interpn(freq, T, freq_fine, 'spline');
+
+%idx_intersect = abs(FSC_fine-T_fine)< param.correlation_threshold;
 %intersect_array = FSC_fine(idx_intersect);
-range = freq_fine_normal(idx_intersect);
-if length(range)<1
-    range = [0 1];
-    %intersect_array = [1 1];
-end
+%range = freq_fine_normal(idx_intersect);
+%if length(range)<1
+%    range = [0 1];
+%    %intersect_array = [1 1];
+%end
 
 %%%%%% CALCULATE STATISTICS %%%%%%%%%%%%%%
-pixel = param.pixel_size; % angstrom
+%pixel = param.pixel_size; % angstrom
 
 %range_start = range(find(range>param.freq_thr, 1, 'first'));
 %if isempty(range_start)
 %    range_start = range(1);
 %end
 
-resolution = pixel/range(1); %[pixel/range_start, pixel/range(end)];
+%resolution = pixel/range(end);
+%keyboard %[pixel/range_start, pixel/range(end)];
 
 end

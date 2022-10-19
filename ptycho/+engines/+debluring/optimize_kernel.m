@@ -9,10 +9,6 @@ function output = optimize_kernel(p, image)
         return
     end
 
-    if strcmp(p.kernel_type,'arbitrary')
-        warning('Specifying an arbitrary kernel for optimization might lead to poor convergence. \n')
-    end
-
     settings = struct();
     settings.SNRt = p.SNRt;                     % SNRt = 0.2071 for 1/2 bit threshold for average of 2 images
                                                 % SNRt = 0.5 for 1 bit threshold for average of 2 images
@@ -20,9 +16,10 @@ function output = optimize_kernel(p, image)
     settings.auto_binning = p.auto_binning;     % bin FRC before calculating rings, it makes calculations faster 
     settings.max_rings = p.max_rings;           % maximal number of rings if autobinning is used 
     settings.freq_thr = p.freq_thr;             % mimimal freq value where resolution is detected  
-    settings.pixel_size = p.dx_spec;         % size of pixel in angstrom
-    settings.mask = p.mask;
+    settings.pixel_size = p.dx_spec;            % size of pixel in angstrom
+    settings.mask = ones([size(image,1),size(image,2)]);
     settings.lucy_iters = p.deconvlucy_iters;
+    settings.damping_threshold = p.damping_threshold;
     settings.correlation_threshold = p.correlation_threshold;
     
     iter_max = 1;
@@ -54,12 +51,22 @@ function output = optimize_kernel(p, image)
         lb =        p. kernel_params_lb;
         ub =        p. kernel_params_ub;
         nonclon =   p. nonlinear_constr;
-        [x(idx,:), fvals(idx), exitflags(idx)] = fmincon(opt_fcn,x0,A,b,Aeq,beq,lb,ub,nonclon,options);
-        optimal_kernel(:,:,idx)= kernel_fcn(x);
+
+        try
+            [x(idx,:), fvals(idx), exitflags(idx)] = fmincon(opt_fcn,x0,A,b,Aeq,beq,lb,ub,nonclon,options);
+            optimal_kernel(:,:,idx)= kernel_fcn(x);
+        catch
+            warning('The deconvolution algorithm failed due to an error with fmincon. Set optimal kernel to identity kernel. \n');
+            identity_kernel = zeros(storage_dim);
+            identity_kernel(ceil(storage_dim(1)/2),ceil(storage_dim(2)/2)) = 1;
+            optimal_kernel(:,:,idx) = identity_kernel;
+            x = [1];
+        end    
     end
 
     if ~all(exitflags)
         warning('The deconvolution algorithm did not converge at least once. Maybe check the settings. \n');
+        keyboard
     end  
 
     output = {optimal_kernel,x};

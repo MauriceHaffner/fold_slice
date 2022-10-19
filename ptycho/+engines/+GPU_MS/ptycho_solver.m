@@ -19,6 +19,7 @@ import engines.GPU_MS.analysis.*
 import engines.GPU_MS.shared.*
 import engines.GPU_MS.initialize.*
 import engines.GPU_MS.GPU_wrapper.*
+import engines.debluring.*
 import math.*
 import utils.*
 import io.*
@@ -428,11 +429,9 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         self = regulation_multilayers(self, par, cache);
     end
   
-    % estimate the convolution kernel, apply deconvolution later
-    if all(isfield(par, {'deconvolve','deconvolve_iter_start','deconvolve_iter_period'})) && par.deconvolve && mod(iter - par.deconvolve_iter_start, par.deconvolve_iter_period) == 0
-        [optimal_kernel,x] = optimize_kernel(par,par.object);
-        par.optimal_kernel = optimal_kernel;
-        par.optimal_kernel_params = x;
+    if all(isfield(par.p, {'deconvolve','deconvolve_iter_start'})) && par.p.deconvolve && mod(iter,par.p.deconvolve_iter_start) == 0
+        verbose(1,'Applying deconvolution to the reconstruction result.')
+        self = apply_deconvolution(self, par, cache, iter);
     end
   % constraint periodic along propagation, by Zhen Chen.
         % regularize_layers works better (set regularize_layers > 0), then this is unnecessary.
@@ -739,90 +738,90 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
             end
         end
 
-        % #################################################################
-        % Also save deconvolved versions of pictures above if specified
-        % #################################################################
+        % % #################################################################
+        % % Also save deconvolved versions of pictures above if specified
+        % % #################################################################
 
-        if all(isfield(par, {'deconvolve', 'save_deconvolved_images'})) && par.deconvolve && par.save_deconvolved_images
+        % if all(isfield(par, {'deconvolve', 'save_deconvolved_images'})) && par.deconvolve && par.save_deconvolved_images
                        
-        %% save object phase
-            if any(ismember({'obj_ph','obj_ph_sum','obj_ph_stack'}, par.save_images))
-                object_temp = Ggather(self.object{1});
-                object_temp = apply_inv_kernel(par, object_temp, par.optimal_kernel);    
-                object_roi_temp = object_temp(cache.object_ROI{:},:);
-                N_obj_roi = size(object_roi_temp);
-                O_phase_roi = zeros(N_obj_roi(1), N_obj_roi(2), par.Nlayers);
-                for ll=1:par.Nlayers
-                    object_temp = Ggather(self.object{ll});
-                    O_phase_roi(:,:,ll) = phase_unwrap(angle(object_temp(cache.object_ROI{:})));
-                end
-                if ismember('obj_ph_sum', par.save_images)
-                    O_phase_roi_sum = sum(O_phase_roi,3);
-                    saveName = strcat('obj_phase_roi_sum_Niter',num2str(iter),'_deconv','.tiff');
-                    saveDir = strcat(par.fout,'/obj_phase_roi_sum/');
-                    if ~exist(saveDir, 'dir'); mkdir(saveDir); end
-                    save_tiff_image(O_phase_roi_sum,strcat(saveDir,saveName));
-                end
-                if ismember('obj_ph', par.save_images)
-                    O_phase_roi2 = zeros(N_obj_roi(1), N_obj_roi(2)*par.Nlayers);
-                    for ll=1:par.Nlayers
-                        x_lb = (ll-1)*N_obj_roi(2)+1;
-                        x_ub = ll*N_obj_roi(2);
-                        O_phase_roi2(:,x_lb:x_ub) = O_phase_roi(:,:,ll);
-                    end
-                    saveName = strcat('obj_phase_roi_Niter',num2str(iter),'_deconv','.tiff');
-                    saveDir = strcat(par.fout,'/obj_phase_roi/');
-                    if ~exist(saveDir, 'dir'); mkdir(saveDir); end
-                    save_tiff_image(O_phase_roi2,strcat(saveDir,saveName));
-                end
-                if ismember('obj_ph_stack', par.save_images)
-                    saveName = strcat('obj_phase_roi_Niter',num2str(iter),'_deconv','.tiff');
-                    saveDir = strcat(par.fout,'/obj_phase_roi_stack/');
-                    if ~exist(saveDir, 'dir'); mkdir(saveDir); end
-                    par_tiff.name = strcat(saveDir,saveName);
-                    save_tiff_image_stack(O_phase_roi, par_tiff);
-                end
-            end
+        % %% save object phase
+        %     if any(ismember({'obj_ph','obj_ph_sum','obj_ph_stack'}, par.save_images))
+        %         object_temp = Ggather(self.object{1});
+        %         object_temp = apply_inv_kernel(par, object_temp, par.optimal_kernel);    
+        %         object_roi_temp = object_temp(cache.object_ROI{:},:);
+        %         N_obj_roi = size(object_roi_temp);
+        %         O_phase_roi = zeros(N_obj_roi(1), N_obj_roi(2), par.Nlayers);
+        %         for ll=1:par.Nlayers
+        %             object_temp = Ggather(self.object{ll});
+        %             O_phase_roi(:,:,ll) = phase_unwrap(angle(object_temp(cache.object_ROI{:})));
+        %         end
+        %         if ismember('obj_ph_sum', par.save_images)
+        %             O_phase_roi_sum = sum(O_phase_roi,3);
+        %             saveName = strcat('obj_phase_roi_sum_Niter',num2str(iter),'_deconv','.tiff');
+        %             saveDir = strcat(par.fout,'/obj_phase_roi_sum/');
+        %             if ~exist(saveDir, 'dir'); mkdir(saveDir); end
+        %             save_tiff_image(O_phase_roi_sum,strcat(saveDir,saveName));
+        %         end
+        %         if ismember('obj_ph', par.save_images)
+        %             O_phase_roi2 = zeros(N_obj_roi(1), N_obj_roi(2)*par.Nlayers);
+        %             for ll=1:par.Nlayers
+        %                 x_lb = (ll-1)*N_obj_roi(2)+1;
+        %                 x_ub = ll*N_obj_roi(2);
+        %                 O_phase_roi2(:,x_lb:x_ub) = O_phase_roi(:,:,ll);
+        %             end
+        %             saveName = strcat('obj_phase_roi_Niter',num2str(iter),'_deconv','.tiff');
+        %             saveDir = strcat(par.fout,'/obj_phase_roi/');
+        %             if ~exist(saveDir, 'dir'); mkdir(saveDir); end
+        %             save_tiff_image(O_phase_roi2,strcat(saveDir,saveName));
+        %         end
+        %         if ismember('obj_ph_stack', par.save_images)
+        %             saveName = strcat('obj_phase_roi_Niter',num2str(iter),'_deconv','.tiff');
+        %             saveDir = strcat(par.fout,'/obj_phase_roi_stack/');
+        %             if ~exist(saveDir, 'dir'); mkdir(saveDir); end
+        %             par_tiff.name = strcat(saveDir,saveName);
+        %             save_tiff_image_stack(O_phase_roi, par_tiff);
+        %         end
+        %     end
         
-            %% save object magnitude
-            if any(ismember({'obj_mag','obj_ph_sum','obj_mag_stack'}, par.save_images))
-                object_temp = Ggather(self.object{1});
-                object_temp = apply_inv_kernel(p, object_temp, p.optimal_kernel);
-                object_roi_temp = object_temp(cache.object_ROI{:},:);
-                N_obj_roi = size(object_roi_temp);
-                O_mag_roi = zeros(N_obj_roi(1), N_obj_roi(2), par.Nlayers);
-                for ll=1:par.Nlayers
-                    object_temp = Ggather(self.object{ll});
-               	    O_mag_roi(:,:,ll) = abs(object_temp(cache.object_ROI{:}));
-                end
-                if ismember('obj_mag_sum', par.save_images)
-                    O_mag_roi_sum = prod(O_mag_roi,3);
-                    saveName = strcat('obj_mag_roi_sum_Niter',num2str(iter),'_deconv','.tiff');
-                    saveDir = strcat(par.fout,'/obj_mag_roi_sum/');
-                    if ~exist(saveDir, 'dir'); mkdir(saveDir); end
-                    save_tiff_image(O_mag_roi_sum,strcat(saveDir,saveName));
-                end
-                if ismember('obj_mag', par.save_images)
-                    O_mag_roi2 = zeros(N_obj_roi(1), N_obj_roi(2)*par.Nlayers);
-                    for ll=1:par.Nlayers
-                        x_lb = (ll-1)*N_obj_roi(2)+1;
-                        x_ub = ll*N_obj_roi(2);
-                        O_mag_roi2(:,x_lb:x_ub) = O_mag_roi(:,:,ll);
-                    end
-                    saveName = strcat('obj_mag_roi_Niter',num2str(iter),'_deconv','.tiff');
-                    saveDir = strcat(par.fout,'/obj_mag_roi/');
-                    if ~exist(saveDir, 'dir'); mkdir(saveDir); end
-                    save_tiff_image(O_mag_roi2,strcat(saveDir,saveName));
-                end
-                if ismember('obj_mag_stack', par.save_images)
-                    saveName = strcat('obj_mag_roi_Niter',num2str(iter),'_deconv','.tiff');
-                    saveDir = strcat(par.fout,'/obj_mag_roi_stack/');
-                    if ~exist(saveDir, 'dir'); mkdir(saveDir); end
-                    par_tiff.name = strcat(saveDir,saveName);
-                    save_tiff_image_stack(O_mag_roi, par_tiff);
-                end
-            end
-        end    
+        %     %% save object magnitude
+        %     if any(ismember({'obj_mag','obj_ph_sum','obj_mag_stack'}, par.save_images))
+        %         object_temp = Ggather(self.object{1});
+        %         object_temp = apply_inv_kernel(p, object_temp, p.optimal_kernel);
+        %         object_roi_temp = object_temp(cache.object_ROI{:},:);
+        %         N_obj_roi = size(object_roi_temp);
+        %         O_mag_roi = zeros(N_obj_roi(1), N_obj_roi(2), par.Nlayers);
+        %         for ll=1:par.Nlayers
+        %             object_temp = Ggather(self.object{ll});
+        %        	    O_mag_roi(:,:,ll) = abs(object_temp(cache.object_ROI{:}));
+        %         end
+        %         if ismember('obj_mag_sum', par.save_images)
+        %             O_mag_roi_sum = prod(O_mag_roi,3);
+        %             saveName = strcat('obj_mag_roi_sum_Niter',num2str(iter),'_deconv','.tiff');
+        %             saveDir = strcat(par.fout,'/obj_mag_roi_sum/');
+        %             if ~exist(saveDir, 'dir'); mkdir(saveDir); end
+        %             save_tiff_image(O_mag_roi_sum,strcat(saveDir,saveName));
+        %         end
+        %         if ismember('obj_mag', par.save_images)
+        %             O_mag_roi2 = zeros(N_obj_roi(1), N_obj_roi(2)*par.Nlayers);
+        %             for ll=1:par.Nlayers
+        %                 x_lb = (ll-1)*N_obj_roi(2)+1;
+        %                 x_ub = ll*N_obj_roi(2);
+        %                 O_mag_roi2(:,x_lb:x_ub) = O_mag_roi(:,:,ll);
+        %             end
+        %             saveName = strcat('obj_mag_roi_Niter',num2str(iter),'_deconv','.tiff');
+        %             saveDir = strcat(par.fout,'/obj_mag_roi/');
+        %             if ~exist(saveDir, 'dir'); mkdir(saveDir); end
+        %             save_tiff_image(O_mag_roi2,strcat(saveDir,saveName));
+        %         end
+        %         if ismember('obj_mag_stack', par.save_images)
+        %             saveName = strcat('obj_mag_roi_Niter',num2str(iter),'_deconv','.tiff');
+        %             saveDir = strcat(par.fout,'/obj_mag_roi_stack/');
+        %             if ~exist(saveDir, 'dir'); mkdir(saveDir); end
+        %             par_tiff.name = strcat(saveDir,saveName);
+        %             save_tiff_image_stack(O_mag_roi, par_tiff);
+        %         end
+        %     end
+        % end    
 
         %% save probe
         if any(ismember({'probe_mag','probe'}, par.save_images))
