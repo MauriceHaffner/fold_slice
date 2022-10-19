@@ -1,9 +1,11 @@
 clear variables
-addpath(strcat(pwd,'/utils/'))
-addpath(core.find_base_package)
+%addpath(strcat(pwd,'/utils/'))
+%addpath(core.find_base_package)
+addpath(genpath('/users/stud/haffnerm/Ptychoshelves/fold_slice'))
+addpath('/users/stud/haffnerm/Ptychoshelves/cSAXS_matlab_base_package')
 
 %%%%%%%%%%%%%%%%%%%% data parameters %%%%%%%%%%%%%%%%%%%%
-base_path = '/home/beams2/YJIANG/ptychography/electron/PrScO3/science/';
+base_path = '/users/stud/haffnerm/Ptychoshelves/data/';
 roi_label = '0_Ndp256';
 scan_number = 1;
 scan_string_format = '%01d';
@@ -18,7 +20,8 @@ N_scan_y = 64; %number of scan points
 N_scan_x = 64;
 %%%%%%%%%%%%%%%%%%%% reconstruction parameters %%%%%%%%%%%%%%%%%%%%
 gpu_id = 1;
-Niter_save_results = 50;
+Niter = 100; %200;
+Niter_save_results = 10;
 Niter_plot_results = inf;
 
 Nprobe = 8; % # of probe modes
@@ -26,7 +29,7 @@ thickness = 210; % sample thickness in angstrom
 Nlayers = 21; % # of slices for multi-slice, 1 for single-slice
 delta_z = thickness / Nlayers;
 
-initial_probe_file = fullfile(base_path,'/1/init_probe.mat');
+initial_probe_file = '/users/stud/haffnerm/Ptychoshelves/data/sample_data_PrScO3.mat1/init_probe.mat';
 
 %% %%%%%%%%%%%%%%%%%% initialize data parameters %%%%%%%%%%%%%%%%%%%%
 p = struct();
@@ -44,7 +47,7 @@ p.   d_alpha = alpha0/rbf;                              % Added by YJ. d_alpha i
 p.   prop_regime = 'farfield';                              % propagation regime: nearfield, farfield (default), !! nearfield is supported only by GPU engines 
 p.   focus_to_sample_distance = [];                         % sample to focus distance, parameter to be set for nearfield ptychography, otherwise it is ignored 
 p.   energy = voltage;                                           % Energy (in keV), leave empty to use spec entry mokev
-
+p.   Nlayers = Nlayers;
 %p.   affine_angle = 0;                                     % Not used by ptycho_recons at all. This allows you to define a variable for the affine matrix below and keep it in p for future record. This is used later by the affine_matrix_search.m script
 %p.   affine_matrix = [1 , 0; 0, 1] ; % Applies affine transformation (e.g. rotation, stretching) to the positions (ignore by = []). Convention [yn;xn] = M*[y;x].
 affine_mat  = compose_affine_matrix(1, 0, rot_ang, 0);
@@ -107,8 +110,8 @@ p.   scan_string_format = scan_string_format;                  % format for scan
 %%%p.   base_path = '../../';                                  % base path : used for automatic generation of other paths 
 p.   base_path = base_path;     % base path : used for automatic generation of other paths 
 p.   specfile = '';                                         % Name of spec file to get motor positions and check end of scan, defaut is p.spec_file == p.base_path;
-p.   ptycho_matlab_path = '';                               % cSAXS ptycho package path
-p.   cSAXS_matlab_path = '';                                % cSAXS base package path
+p.   ptycho_matlab_path = '/users/stud/haffnerm/Ptychoshelves/fold_slice/ptycho';                               % cSAXS ptycho package path
+p.   cSAXS_matlab_path = '/users/stud/haffnerm/Ptychoshelves/fold_slice';
 p.   raw_data_path{1} = '';                                 % Default using compile_x12sa_filename, used only if data should be prepared automatically
 p.   prepare_data_path = '';                                % Default: base_path + 'analysis'. Other example: '/afs/psi.ch/project/CDI/cSAXS_project/analysis2/'; also supports %u to insert the scan number at a later point (e.g. '/afs/psi.ch/project/CDI/cSAXS_project/analysis2/S%.5u')
 p.   prepare_data_filename = [];                            % Leave empty for default file name generation, otherwise use [sprintf('S%05d_data_%03dx%03d',p.scan_number(1), p.asize(1), p.asize(2)) p.prep_data_suffix '.h5'] as default 
@@ -213,7 +216,7 @@ eng. gpu_id = gpu_id;                      % default GPU id, [] means choosen by
 eng. check_gpu_load = true;            % check available GPU memory before starting GPU engines 
 
 % general
-eng. number_iterations = 200;          % number of iterations for selected method 
+eng. number_iterations = 100; %200;          % number of iterations for selected method 
 eng. asize_presolve = [128, 128];      % crop data to "asize_presolve" size to get low resolution estimate that can be used in the next engine as a good initial guess 
 eng. align_shared_objects = false;     % before merging multiple unshared objects into one shared, the object will be aligned and the probes shifted by the same distance -> use for alignement and shared reconstruction of drifting scans  
 
@@ -309,6 +312,42 @@ eng.save_results_every = Niter_save_results;
 eng.save_images ={'obj_ph_stack','obj_ph_sum','probe'};
 eng.extraPrintInfo = strcat('PSO');
 
+% Deconvolution engine
+p. deconvolve = true; %true;
+p. deconvolve_iter_start = 10;
+p. deconv_final_iter = Niter;
+p. deconv_weight = 0.6;
+p. multislice_deconvolution = false;
+p. kernel_type = 'arbitrary';
+p. output_kernel = 'real';
+
+% initialize all parameters for each slice (if p. multislice_deconvolution is true)
+p. kernel_size = 3;
+p. kernel_params = 1/9 * ones(1,9); %[2];
+p. kernel_params_lb = zeros(1,9);
+p. kernel_params_ub = ones(1,9);
+p. A_linear_ineq_constr = [];
+p. b_linear_ineq_contsr = [];
+p. A_linear_eq_constr = ones(1,9); %[];
+p. b_linear_eq_contsr = 1; %[];
+p. nonlinear_constr = [];
+p. deconvlucy_iters = 15;
+p. kernel_residual_style = false;
+p. smooth_kernel = false;
+p. smooth_kernel_width = 2;
+p. SNRt = 0.5; %0.1;
+p. damping_threshold = 10;
+p. correlation_threshold = 0.55;
+p. mask_threshold = 0.5;
+p. thickring = 1;             % thick ring in Fourier domain
+p. auto_binning = false;      % bin FRC before calculating rings, it makes calculations faster 
+p. max_rings = 200;           % maximal number of rings if autobinning is used 
+p. freq_thr = 0.05;
+
+p. FSC_evals = 1000;
+p. fminsearch_evals = 1000;
+p. resolution_tol = 1e-4;
+
 resultDir = strcat(p.base_path,sprintf(p.scan.format, p.scan_number),'/roi',p.scan.roi_label,'/');
 [eng.fout, p.suffix] = generateResultDir(eng, resultDir);
 
@@ -316,7 +355,7 @@ resultDir = strcat(p.base_path,sprintf(p.scan.format, p.scan_number),'/roi',p.sc
 [p, ~] = core.append_engine(p, eng);    % Adds this engine to the reconstruction process
 
 %% refined reconstruction at full resolution
-eng. number_iterations = 200;          % number of iterations for selected method 
+eng. number_iterations = Niter;          % number of iterations for selected method 
 eng. asize_presolve = [];              % crop data to "asize_presolve" size to get low resolution estimate that can be used in the next engine as a good initial guess 
 eng. grouping = 32;                    % size of processed blocks, larger blocks need more memory but they use GPU more effeciently, !!! grouping == inf means use as large as possible to fit into memory 
                                        % * for hPIE, ePIE, MLs methods smaller blocks lead to faster convergence, 
@@ -333,3 +372,5 @@ eng. probe_position_search = 50;       % iteration number from which the engine 
 tic
 out = core.ptycho_recons(p);
 toc
+
+exit
