@@ -4,7 +4,7 @@ function output = optimize_kernel(p, image)
     import engines.debluring.*
     
     if (strcmp(p.kernel_type,'horizontal') || strcmp(p.kernel_type,'vertical') || strcmp(p.kernel_type,'diagonal'))
-        warning('Specified kernel type is not optimizable. \n')
+        warning('Specified kernel type is not optimizable.')
         optimal_kernel = kernel_fcn(x0);
         return
     end
@@ -31,7 +31,7 @@ function output = optimize_kernel(p, image)
         check = true;   
     end
 
-    kernel_fcn = @(params) init_kernel(p, params);    
+    kernel_fcn = @(params) init_kernel(p,p.kernel_size, params);    
     options = optimset('MaxFunEvals',p.FSC_evals,'MaxIter', p.fminsearch_evals, 'TolFun', p.resolution_tol);
     optimal_kernel = zeros(storage_dim);
     x = zeros(iter_max,size(p.kernel_params,2));
@@ -56,7 +56,7 @@ function output = optimize_kernel(p, image)
             [x(idx,:), fvals(idx), exitflags(idx)] = fmincon(opt_fcn,x0,A,b,Aeq,beq,lb,ub,nonclon,options);
             optimal_kernel(:,:,idx)= kernel_fcn(x);
         catch
-            warning('The deconvolution algorithm failed due to an error with fmincon. Set optimal kernel to identity kernel. \n');
+            warning('The deconvolution algorithm failed due to an error with fmincon. Set optimal kernel to identity kernel.');
             identity_kernel = zeros(storage_dim);
             identity_kernel(ceil(storage_dim(1)/2),ceil(storage_dim(2)/2)) = 1;
             optimal_kernel(:,:,idx) = identity_kernel;
@@ -65,7 +65,7 @@ function output = optimize_kernel(p, image)
     end
 
     if ~all(exitflags)
-        warning('The deconvolution algorithm did not converge at least once. Maybe check the settings. \n');
+        warning('The deconvolution algorithm did not converge at least once. Maybe check the settings.');
         keyboard
     end  
 
