@@ -133,6 +133,10 @@ if any(param.custom_data_flip)
         paramInfo = strcat(paramInfo,'_T');
     end
 end
+
+% if isfield(param, 'deconvolve') && param.deconvolve
+%     paramInfo = strcat(paramInfo,'_deconv')
+% end    
 %{
 if any(param.det_bad_pixels(:))
     output = strcat(output,'_badPixels');
