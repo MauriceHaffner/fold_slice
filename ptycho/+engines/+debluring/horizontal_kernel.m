@@ -1,6 +1,6 @@
 function kernel = horizontal_kernel(size)
 
-    if (mod(size,2)~=0)
+    if (mod(size,2)==0)
         size = size + 1;
     end
     kernel = zeros(size,size);

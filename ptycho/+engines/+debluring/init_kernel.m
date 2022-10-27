@@ -1,10 +1,8 @@
 % call custom functions for debluring/ deconvolution
 
-function output_kernel = init_kernel(p, params, varargin)
+function output_kernel = init_kernel(p,size, params, varargin)
 
     import engines.debluring.*
-
-    size = p.kernel_size;
     switch p.kernel_type
 
     case 'gaussian'
@@ -18,7 +16,9 @@ function output_kernel = init_kernel(p, params, varargin)
     case 'vertical'
         kernel = transpose(horizontal_kernel(size,params));
     case 'diagonal'
-        kernel = diagonal_kernel(size);
+        kernel = diagonal_kernel(size,params);
+    case 'boxblur'
+        kernel = boxblur_kernel(size);
     otherwise
         try
             custom_fcn = str2func(type);

@@ -1,14 +1,11 @@
-function kernel = diagonal_kernel(size)
-    
-    if (mod(size,2)~=0)
+function kernel = diagonal_kernel(size,params)
+   
+    import engines.debluring.*
+    weight= params(1);
+    if (mod(size,2)==0)
         size = size + 1;
     end
-    x = 0 : 1 : size-1;
-    x = x - (size-1)/2;
-    kernel = abs(x);
-    kernel((n-1)/2 + 1) = size;
-    kernel = 1 ./ kernel;
-    kernel = kernel / sum(kernel,"all");
-    kernel = diag(kernel);
+    kernel = weight * horizontal_kernel(size) + (1-weight) * horizontal_kernel(size).';
+    kernel = kernel / sum(kernel,'all');
         
 end
