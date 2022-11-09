@@ -1,4 +1,4 @@
-% generate a ensemble of different kernel
+% generate an ensemble of different kernel
 % used to determine best kernel out of selection
 function output = choose_from_kernel_ensemble(p, image)
 

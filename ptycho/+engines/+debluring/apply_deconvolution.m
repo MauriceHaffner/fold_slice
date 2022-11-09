@@ -1,3 +1,4 @@
+% Apply deconvolution tho object and/or probe to overcome convolution and noise effects
 function self = apply_deconvolution(self, par, cache, iter)
 
     import engines.debluring.*
@@ -24,7 +25,9 @@ function self = apply_deconvolution(self, par, cache, iter)
     end  
     par.p.optimal_kernel = output_cell{1};
     par.p.optimal_kernel_params = output_cell{2};    
-    % now apply the deconvolution to the whole object
+    % now apply the deconvolution to the object
+    % it appeared that applying deconvolution only on the imaginary part works best
+    % maybe becausse of WPOA and different magnitudes of imaginary and real part
     if par.p.deconvolve_object
         object = Ggather(self.object{1});
         N_obj = size(object);
@@ -41,15 +44,19 @@ function self = apply_deconvolution(self, par, cache, iter)
         end  
         self.object = cell_of_GPU_arrays;
     end  
+    
+    % update the mask, used within next iterations to counter effect of convolution
+    if par.p.update_mask
+        mask = par.p.fmask;
+        mask_size = [size(mask,1),size(mask,2)];
+        kernel_mask = kernel_to_mask(mask_size,par.p.optimal_kernel);
+        % generate a probe mask in a band-pass-filter style to counter amplification and damping of frequency components by noise and convolution
+        binary_mask = (abs(kernel_mask) >= par.p.mask_threshold_low * max(abs(kernel_mask),[],'all')) & (abs(kernel_mask) <= par.p.mask_threshold_high * max(abs(kernel_mask),[],'all'));
+        par.p.fmask = logical(binary_mask);
+    end
 
-    % update the mask, used within next engine to counter effect of convolution noise
-    mask = par.p.fmask;
-    mask_size = [size(mask,1),size(mask,2)];
-    kernel_mask = kernel_to_mask(mask_size,par.p.optimal_kernel);
-    binary_mask = abs(kernel_mask) > par.p.mask_threshold * max(abs(kernel_mask),[],'all');
-    par.p.fmask = logical(binary_mask);
-
-    %probe correction
+    % probe correction
+    % deprecated, did not really work yet
     if par.p.deconvolve_probe        
         par.p.optimal_kernel = output_cell{1};
         par.p.optimal_kernel_params = output_cell{2};    
