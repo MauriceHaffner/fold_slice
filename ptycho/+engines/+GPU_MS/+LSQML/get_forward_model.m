@@ -91,7 +91,14 @@ function [self, probe, obj_proj, psi] = get_forward_model(self, obj_proj, par, c
    % At this point, psi is the exit wave after the last object layer
    % Now propagate the wave function to far-field (detector) plane
    % This is same as using fwd_fourier_proj w. distance = inf and no camera angle refinement 
+   if isfield(par.p,'convolution_kernel')
+        import engines.debluring.*
+   end 
    for ll= 1:max(par.object_modes, par.probe_modes)
-       psi{ll} = fft2_safe(psi{ll});  % fully farfield 
-   end
+        if isfield(par.p,'convolution_kernel')
+            psi{ll} = fft2_safe(convn(psi{ll},par.p.convolution_kernel,'same'));% .* fft_kernel([size(psi{ll},1),size(psi{ll},2)],par.p.convolution_kernel); % fully farfield + convolution  
+        else
+            psi{ll} = fft2_safe(psi{ll}); % fully farfield
+        end        
+    end
 end
