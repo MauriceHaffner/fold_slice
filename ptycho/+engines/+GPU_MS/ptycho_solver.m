@@ -433,6 +433,17 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         verbose(1,'Applying deconvolution to the reconstruction result.')
         self = apply_deconvolution(self, par, cache, iter);
     end
+
+    if isfield(par.p, 'sharpening') && par.p.sharpening && iter == par.number_iterations
+        verbose(1,'Applying sharpening to the reconstruction result.')
+        self = apply_sharpening(self, par, cache, iter);
+    end
+
+    if isfield(par.p, 'potential_flipping') && par.p.potential_flipping && iter == par.number_iterations
+        verbose(1,'Applying sharpening to the reconstruction result.')
+        self = apply_sharpening(self, par, cache, iter);
+    end
+    
   % constraint periodic along propagation, by Zhen Chen.
         % regularize_layers works better (set regularize_layers > 0), then this is unnecessary.
 %     if par.Nlayers > 1 && isfield(par.p,'forcelayer') && par.p.forcelayer && (iter >= par.p.Nst_forcelayer && iter <= par.p.Nend_forcelayer)
