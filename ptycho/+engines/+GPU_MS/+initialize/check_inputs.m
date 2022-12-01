@@ -103,7 +103,7 @@ end
 %vacuum layer is appended: self.z_distance = [p.delta_z, inf] for far-field 
 par.Nlayers = length(self.z_distance);
 if par.Nlayers > 1 && isinf(self.z_distance(end)) 
-    % Added by ZC: exclude the last vacuum (inf) layer for multisluce
+    % Added by ZC: exclude the last vacuum (inf) layer for multislice
     par.Nlayers = par.Nlayers - 1;
 end
 
