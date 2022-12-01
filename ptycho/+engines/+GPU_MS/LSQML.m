@@ -20,6 +20,7 @@ function [self, cache, fourier_error] =  LSQML(self,par,cache,fourier_error,iter
     import plotting.*
     import engines.GPU_MS.GPU_wrapper.*
     import engines.GPU_MS.LSQML.*
+    import engines.debluring.*
 
     assert( ~(par.Nscans > 1 &&  par.object_modes > 1), 'Multiobject + multiscan not supported')
 
@@ -170,10 +171,15 @@ function [self, cache, fourier_error] =  LSQML(self,par,cache,fourier_error,iter
         % Now propagate chi back to the last object layer 
         % This is same as using back_fourier_proj w. distance = inf and no camera angle refinement 
         for ll= 1:max(par.object_modes, par.probe_modes)
-        	chi{ll} = ifft2_safe(chi{ll});  % fully farfield inverse fft
+            if isfield(par.p,'convolution_kernel')
+                chi{ll} = ifft2_safe(chi{ll} .* conj(fft_kernel([size(chi{ll},1),size(chi{ll},2)],par.p.convolution_kernel)) ./ abs(fft_kernel([size(chi{ll},1),size(chi{ll},2)],par.p.convolution_kernel)));
+                %chi{ll} = ifft2_safe(convn(chi{ll},par.p.convolution_kernel,'same')); % Didn't work out but I leave it in for now. Deconv seams to be better
+            else
+        	    chi{ll} = ifft2_safe(chi{ll});  % fully farfield inverse fft
+            end
         end
-        
-        %% %%%%%%%%%% LSQ optimization code (probe & object updates)%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+        %%%%%%%%%%%% LSQ optimization code (probe & object updates)%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         for layer = par.Nlayers:-1:1
             for ll = 1:max(par.probe_modes, par.object_modes)
                 object_reconstruct = iter >= par.object_change_start && (par.apply_multimodal_update || is_used(par, 'fly_scan') || ll <= par.object_modes );

@@ -86,7 +86,7 @@ function small_array = get_from_3D_projection(small_array, full_array, positions
         %% run fast MEX-based code if possible 
         try
             get_from_3D_projection_mex(small_array,full_array, positions_offset, indices)
-        catch err 
+        catch err            
             % recompile the scripts if needed
             if any(strcmp(err.identifier, { 'MATLAB:UndefinedFunction','MATLAB:mex:ErrInvalidMEXFile'}))
                 utils.verbose(0, 'Recompilation of MEX functions ... ')
