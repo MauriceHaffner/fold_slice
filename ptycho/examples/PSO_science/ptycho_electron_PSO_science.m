@@ -1,32 +1,29 @@
 clear variables
-%addpath(strcat(pwd,'/utils/'))
-%addpath(core.find_base_package)
 addpath(genpath('/users/stud/haffnerm/Ptychoshelves/fold_slice'))
-addpath('/users/stud/haffnerm/Ptychoshelves/cSAXS_matlab_base_package')
 
-%%%%%%%%%%%%%%%%%%%% data parameters %%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%% data parameters %%%%%%%%%%%%%%%%%%%%
 base_path = '/users/stud/haffnerm/Ptychoshelves/data/';
 roi_label = '0_Ndp256';
 scan_number = 1;
 scan_string_format = '%01d';
-Ndpx = 256;  % size of cbed
-alpha0 = 21.4; % semi-convergence angle (mrad)
-rbf = 26; % radius of the BF disk in cbed. Can be used to calculate dk
+Ndpx = 256;                     % size of cbed
+alpha0 = 21.4;                  % semi-convergence angle (mrad)
+rbf = 26;                       % radius of the BF disk in cbed. Can be used to calculate dk
 voltage = 300;
-rot_ang = 0; %angle between cbed and scan coord.
+rot_ang = 0;                    % angle between cbed and scan coord.
 
-scan_step_size = 0.41; %angstrom
-N_scan_y = 64; %number of scan points
+scan_step_size = 0.41;          % angstrom
+N_scan_y = 64;                  % number of scan points
 N_scan_x = 64;
-%%%%%%%%%%%%%%%%%%%% reconstruction parameters %%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%% reconstruction parameters %%%%%%%%%%%%%%%%%%%%
 gpu_id = 1;
-Niter = 100; %200;
+Niter = 100;
 Niter_save_results = 10;
 Niter_plot_results = inf;
 
-Nprobe = 8; % # of probe modes
-thickness = 210; % sample thickness in angstrom
-Nlayers = 21; % # of slices for multi-slice, 1 for single-slice
+Nprobe = 8;             % # of probe modes
+thickness = 210;        % sample thickness in angstrom
+Nlayers = 21;           % # of slices for multi-slice, 1 for single-slice
 delta_z = thickness / Nlayers;
 
 initial_probe_file = '/users/stud/haffnerm/Ptychoshelves/data/sample_data_PrScO3.mat1/init_probe.mat';
@@ -39,26 +36,24 @@ p.   scan_number = scan_number;                    % Multiple scan numbers for s
 
 % Geometry
 p.   z = 1;                                             % Distance from object to detector. Always 1 for electron ptycho
-p.   asize = [Ndpx,Ndpx];                                     % Diffr. patt. array size
-p.   ctr = [fix(Ndpx/2)+1, fix(Ndpx/2)+1];                                       % Diffr. patt. center coordinates (y,x) (empty means middle of the array); e.g. [100 207;100+20 207+10];
-p.   beam_source = 'electron';                         % Added by YJ for electron pty. Use relativistic corrected formula for wavelength. Also change the units on figures
-%p.   dk = dk;                                          % Added by YJ. dk is the pixel size in cbed (1/A). This is used to determine pixel size in electron ptycho
+p.   asize = [Ndpx,Ndpx];                               % Diffr. patt. array size
+p.   ctr = [fix(Ndpx/2)+1, fix(Ndpx/2)+1];              % Diffr. patt. center coordinates (y,x) (empty means middle of the array); e.g. [100 207;100+20 207+10];
+p.   beam_source = 'electron';                          % Added by YJ for electron pty. Use relativistic corrected formula for wavelength. Also change the units on figures
 p.   d_alpha = alpha0/rbf;                              % Added by YJ. d_alpha is the pixel size in cbed (mrad). This is used to determine pixel size in electron ptycho
-p.   prop_regime = 'farfield';                              % propagation regime: nearfield, farfield (default), !! nearfield is supported only by GPU engines 
-p.   focus_to_sample_distance = [];                         % sample to focus distance, parameter to be set for nearfield ptychography, otherwise it is ignored 
-p.   energy = voltage;                                           % Energy (in keV), leave empty to use spec entry mokev
+p.   prop_regime = 'farfield';                          % propagation regime: nearfield, farfield (default), !! nearfield is supported only by GPU engines 
+p.   focus_to_sample_distance = [];                     % sample to focus distance, parameter to be set for nearfield ptychography, otherwise it is ignored 
+p.   energy = voltage;                                  % Energy (in keV), leave empty to use spec entry mokev
 p.   Nlayers = Nlayers;
-%p.   affine_angle = 0;                                     % Not used by ptycho_recons at all. This allows you to define a variable for the affine matrix below and keep it in p for future record. This is used later by the affine_matrix_search.m script
-%p.   affine_matrix = [1 , 0; 0, 1] ; % Applies affine transformation (e.g. rotation, stretching) to the positions (ignore by = []). Convention [yn;xn] = M*[y;x].
+
 affine_mat  = compose_affine_matrix(1, 0, rot_ang, 0);
-p.   affine_matrix = affine_mat ; % Applies affine transformation (e.g. rotation, stretching) to the positions (ignore by = []). Convention [yn;xn] = M*[y;x].
+p.   affine_matrix = affine_mat ;                       % Applies affine transformation (e.g. rotation, stretching) to the positions (ignore by = []). Convention [yn;xn] = M*[y;x].
 
 % Scan meta data
 p.   src_metadata = 'none';                                 % source of the meta data, following options are supported: 'spec', 'none' , 'artificial' - or add new to +scan/+meta/
 p.   queue.lockfile = false;                                % If true writes a lock file, if lock file exists skips recontruction
 
 % Data preparation
-p.   detector.name = 'empad';                           % see +detectors/ folder 
+p.   detector.name = 'empad';                               % see +detectors/ folder 
 p.   detector.check_2_detpos = [];                          % = []; (ignores)   = 270; compares to dettrx to see if p.ctr should be reversed (for OMNY shared scans 1221122), make equal to the middle point of dettrx between the 2 detector positions
 p.   detector.data_prefix = '';                             % Default using current eaccount e.g. e14169_1_
 p.   detector.binning = false;                              % = true to perform 2x2 binning of detector pixels, for binning = N do 2^Nx2^N binning
@@ -68,13 +63,13 @@ p.   detector.burst_frames = 1;                             % number of frames c
 p.   prepare.data_preparator = 'matlab_aps';                % data preparator; 'python' or 'matlab' or 'matlab_aps'
 p.   prepare.auto_prepare_data = true;                      % if true: prepare dataset from raw measurements if the prepared data does not exist
 p.   prepare.force_preparation_data = true;                 % Prepare dataset even if it exists, it will overwrite the file % Default: @prepare_data_2d
-p.   prepare.store_prepared_data = false;                    % store the loaded data to h5 even for non-external engines (i.e. other than c_solver)
+p.   prepare.store_prepared_data = false;                   % store the loaded data to h5 even for non-external engines (i.e. other than c_solver)
 p.   prepare.prepare_data_function = '';                    % (used only if data should be prepared) custom data preparation function handle;
 p.   prepare.auto_center_data = false;                      % if matlab data preparator is used, try to automatically center the diffraction pattern to keep center of mass in center of diffraction
 
 % Scan positions
-p.   src_positions = 'matlab_pos';                           % 'spec', 'orchestra', 'load_from_file', 'matlab_pos' (scan params are defined below) or add new position loaders to +scan/+positions/
-p.   positions_file = '';    %Filename pattern for position files, Example: ['../../specES1/scan_positions/scan_%05d.dat']; (the scan number will be automatically filled in)
+p.   src_positions = 'matlab_pos';                          % 'spec', 'orchestra', 'load_from_file', 'matlab_pos' (scan params are defined below) or add new position loaders to +scan/+positions/
+p.   positions_file = '';                                   % Filename pattern for position files, Example: ['../../specES1/scan_positions/scan_%05d.dat']; (the scan number will be automatically filled in)
 % scan parameters for option src_positions = 'matlab_pos';
 p.   scan.type = 'raster';                                  % {'round', 'raster', 'round_roi', 'custom'}
 p.   scan.roi_label = roi_label;                            % For APS data
@@ -86,15 +81,15 @@ p.   scan.nth = 3;                                          % round scan: number
 p.   scan.lx = 20e-6;                                       % round_roi scan: width of the roi
 p.   scan.ly = 20e-6;                                       % round_roi scan: height of the roi
 p.   scan.dr = 1.5e-6;                                      % round_roi scan: shell step size
-p.   scan.nx = N_scan_x;        %size(dp,3)                                  % raster scan: number of steps in x
-p.   scan.ny = N_scan_y;                                          % raster scan: number of steps in y
-p.   scan.step_size_x = scan_step_size;                               % raster scan: step size (grid spacing)
-p.   scan.step_size_y = scan_step_size;                               % raster scan: step size (grid spacing)
+p.   scan.nx = N_scan_x;                                    % raster scan: number of steps in x
+p.   scan.ny = N_scan_y;                                    % raster scan: number of steps in y
+p.   scan.step_size_x = scan_step_size;                     % raster scan: step size (grid spacing)
+p.   scan.step_size_y = scan_step_size;                     % raster scan: step size (grid spacing)
 p.   scan.custom_flip = [1,1,1];                            % raster scan: apply custom flip [fliplr, flipud, transpose] to positions- similar to eng.custom_data_flip in GPU engines. Added by ZC.
 p.   scan.step_randn_offset = 0;                            % raster scan: relative random offset from the ideal periodic grid to avoid the raster grid pathology 
 p.   scan.b = 0;                                            % fermat: angular offset
 p.   scan.n_max = 1e4;                                      % fermat: maximal number of points generated 
-p.   scan.step = 0.5e-6;                                      % fermat: step size 
+p.   scan.step = 0.5e-6;                                    % fermat: step size 
 p.   scan.cenxy = [0,0];                                    % fermat: position of center offset 
 p.   scan.roi = [];                                         % Region of interest in the object [xmin xmax ymin ymax] in meters. Points outside this region are not used for reconstruction.
                                                             %  (relative to upper corner for raster scans and to center for round scans)    
@@ -104,11 +99,11 @@ p.   scan.custom_params = [];                               % custom: the parame
 
 % I/O
 p.   prefix = '';                                              % For automatic output filenames. If empty: scan number
-p.   suffix = strcat('ML_recon');              % Optional suffix for reconstruction 
+p.   suffix = strcat('ML_recon');                              % Optional suffix for reconstruction 
 p.   scan_string_format = scan_string_format;                  % format for scan string generation, it is used e.g for plotting and data saving 
 
-%%%p.   base_path = '../../';                                  % base path : used for automatic generation of other paths 
-p.   base_path = base_path;     % base path : used for automatic generation of other paths 
+%%%p.   base_path = '../../';                               % base path : used for automatic generation of other paths 
+p.   base_path = base_path;                                 % base path : used for automatic generation of other paths 
 p.   specfile = '';                                         % Name of spec file to get motor positions and check end of scan, defaut is p.spec_file == p.base_path;
 p.   ptycho_matlab_path = '/users/stud/haffnerm/Ptychoshelves/fold_slice/ptycho';                               % cSAXS ptycho package path
 p.   cSAXS_matlab_path = '/users/stud/haffnerm/Ptychoshelves/fold_slice';
@@ -122,13 +117,13 @@ p.   io.file_compression = 0;                               % reconstruction fil
 p.   io.data_compression = 3;                               % prepared data file compression for HDF5 files; 0 for no compression
 p.   io.load_prep_pos = false;                              % load positions from prepared data file and ignore positions provided by metadata
 
-p.   io.data_descriptor = 'PSO multislice';                     %added by YJ. A short string that describe data when sending notifications 
-p.   io.phone_number = '';                      % phone number for sending messages
-p.   io.send_failed_scans_SMS = false;                       % send message if p.queue_max_attempts is exceeded
+p.   io.data_descriptor = 'PSO multislice';                 % added by YJ. A short string that describe data when sending notifications 
+p.   io.phone_number = '';                                  % phone number for sending messages
+p.   io.send_failed_scans_SMS = false;                      % send message if p.queue_max_attempts is exceeded
 p.   io.send_finished_recon_SMS = false;                    % send message after the reconstruction is completed
 p.   io.send_crashed_recon_SMS = false;                     % send message if the reconstruction crashes
 p.   io.SMS_sleep = 1800;                                   % max 1 message per SMS_sleep seconds
-p.   io.script_name = mfilename;                             % added by YJ. store matlab script name
+p.   io.script_name = mfilename;                            % added by YJ. store matlab script name
 
 p.   artificial_data_file = 'template_artificial_data';     % artificial data parameters, set p.src_metadata = 'artificial' to use this template
 
@@ -154,7 +149,7 @@ p.   model.probe_theta_c3 = 0;                              % Modal STEM probe's
 
 %Use probe from this mat-file (not used if model_probe is true)
 p.   initial_probe_file = initial_probe_file;
-p.   probe_file_propagation = 0.0e-3;                            % Distance for propagating the probe from file in meters, = 0 to ignore
+p.   probe_file_propagation = 0.0e-3;                       % Distance for propagating the probe from file in meters, = 0 to ignore
 p.   normalize_init_probe = true;                           % Added by YJ. Can be used to disable normalization of initial probes
 
 % Shared scans - Currently working only for sharing probe and object
@@ -166,17 +161,17 @@ p.   probe_modes  = Nprobe;                                 % Number of coherent
 p.   object_modes = 1;                                      % Number of coherent modes for object
 
 % Mode starting guess
-p.   mode_start_pow = 0.02;                               % Normalized intensity on probe modes > 1. Can be a number (all higher modes equal) or a vector
+p.   mode_start_pow = 0.02;                                 % Normalized intensity on probe modes > 1. Can be a number (all higher modes equal) or a vector
 p.   mode_start = 'herm';                                   % (for probe) = 'rand', = 'herm' (Hermitian-like base), = 'hermver' (vertical modes only), = 'hermhor' (horizontal modes only)
 p.   ortho_probes = true;                                   % orthogonalize probes after each engine
 
 %% Plot, save and analyze
-p.   plot.prepared_data = false;                         % plot prepared data
+p.   plot.prepared_data = false;                            % plot prepared data
 p.   plot.interval = [];                                    % plot each interval-th iteration, does not work for c_solver code
 p.   plot.log_scale = [0 0];                                % Plot on log scale for x and y
 p.   plot.realaxes = true;                                  % Plots show scale in microns
 p.   plot.remove_phase_ramp = false;                        % Remove phase ramp from the plotted / saved phase figures 
-p.   plot.fov_box = false;                                   % Plot the scanning FOV box on the object (both phase and amplitude)
+p.   plot.fov_box = false;                                  % Plot the scanning FOV box on the object (both phase and amplitude)
 p.   plot.fov_box_color = 'r';                              % Color of the scanning FOV box
 p.   plot.positions = true;                                 % Plot the scanning positions
 p.   plot.mask_bool = true;                                 % Mask the noisy contour of the reconstructed object in plots
@@ -194,15 +189,15 @@ p.   plot.calc_FSC = false;                                 % Calculate the Four
 p.   plot.show_FSC = false;                                 % Show the FSC plots, including the cropped FOV
 p.   plot.residua = false;                                  % highlight phase-residua in the image of the reconstructed phase
 
-p.   save.external = true;                             % Use a new Matlab session to run save final figures (saves ~6s per reconstruction). Please be aware that this might lead to an accumulation of Matlab sessions if your single reconstruction is very fast.
-p.   save.store_images = false;                              % Write preview images containing the final reconstructions in [p.base_path,'analysis/online/ptycho/'] if p.use_display = 0 then the figures are opened invisible in order to create the nice layout. It writes images in analysis/online/ptycho
+p.   save.external = true;                                  % Use a new Matlab session to run save final figures (saves ~6s per reconstruction). Please be aware that this might lead to an accumulation of Matlab sessions if your single reconstruction is very fast.
+p.   save.store_images = false;                             % Write preview images containing the final reconstructions in [p.base_path,'analysis/online/ptycho/'] if p.use_display = 0 then the figures are opened invisible in order to create the nice layout. It writes images in analysis/online/ptycho
 p.   save.store_images_intermediate = false;                % save images to disk after each engine
 p.   save.store_images_ids = 1:4;                           % identifiers  of the figure to be stored, 1=obj. amplitude, 2=obj. phase, 3=probes, 4=errors, 5=probes spectrum, 6=object spectrum
 p.   save.store_images_format = 'png';                      % data type of the stored images jpg or png 
 p.   save.store_images_dpi = 150;                           % DPI of the stored bitmap images 
 p.   save.exclude = {'fmag', 'fmask', 'illum_sum'};         % exclude variables to reduce the file size on disk
 p.   save.save_reconstructions_intermediate = false;        % save final object and probes after each engine
-p.   save.save_reconstructions = false;                      % save reconstructed object and probe when full reconstruction is finished 
+p.   save.save_reconstructions = false;                     % save reconstructed object and probe when full reconstruction is finished 
 p.   save.output_file = 'h5';                               % data type of reconstruction file; 'h5' or 'mat'
 
 %% %%%%%%%%%%%%%%%%%% initialize reconstruction parameters %%%%%%%%%%%%%%%%%%%%
@@ -211,24 +206,24 @@ eng = struct();                        % reset settings for this engine
 eng. name = 'GPU_MS';    
 eng. use_gpu = true;                   % if false, run CPU code, but it will get very slow 
 eng. keep_on_gpu = true;               % keep data + projections on GPU, false is useful for large data if DM is used
-eng. compress_data = false;             % use automatic online memory compression to limit need of GPU memory
-eng. gpu_id = gpu_id;                      % default GPU id, [] means choosen by matlab
+eng. compress_data = false;            % use automatic online memory compression to limit need of GPU memory
+eng. gpu_id = gpu_id;                  % default GPU id, [] means choosen by matlab
 eng. check_gpu_load = true;            % check available GPU memory before starting GPU engines 
 
 % general
-eng. number_iterations = 100; %200;          % number of iterations for selected method 
+eng. number_iterations = 100;          % number of iterations for selected method 
 eng. asize_presolve = [128, 128];      % crop data to "asize_presolve" size to get low resolution estimate that can be used in the next engine as a good initial guess 
 eng. align_shared_objects = false;     % before merging multiple unshared objects into one shared, the object will be aligned and the probes shifted by the same distance -> use for alignement and shared reconstruction of drifting scans  
 
 eng. method = 'MLs';                   % choose GPU solver: DM, ePIE, hPIE, MLc, Mls, -- recommended are MLc and MLs
-eng. opt_errmetric = 'L1';            % optimization likelihood - poisson, L1
+eng. opt_errmetric = 'L1';             % optimization likelihood - poisson, L1
 eng. grouping = 64;                    % size of processed blocks, larger blocks need more memory but they use GPU more effeciently, !!! grouping == inf means use as large as possible to fit into memory 
                                        % * for hPIE, ePIE, MLs methods smaller blocks lead to faster convergence, 
                                        % * for MLc the convergence is similar 
                                        % * for DM is has no effect on convergence
-eng. probe_modes  = p.probe_modes;                % Number of coherent modes for probe
+eng. probe_modes  = p.probe_modes;     % Number of coherent modes for probe
 eng. object_change_start = 1;          % Start updating object at this iteration number
-eng. probe_change_start = 20;           % Start updating probe at this iteration number
+eng. probe_change_start = 20;          % Start updating probe at this iteration number
 
 % regularizations
 eng. reg_mu = 0;                       % Regularization (smooting) constant ( reg_mu = 0 for no regularization)
@@ -258,9 +253,8 @@ eng. probe_regularization = 0.1;      % Weight factor for the probe update (iner
 % position refinement 
 eng. apply_subpix_shift = true;       % apply FFT-based subpixel shift, it is automatically allowed for position refinement
 eng. probe_position_search = 50;      % iteration number from which the engine will reconstruct probe positions, from iteration == probe_position_search, assume they have to match geometry model with error less than probe_position_error_max
-%eng. probe_geometry_model = {'scale', 'asymmetry', 'rotation', 'shear'};  % list of free parameters in the geometry model, choose from: {'scale', 'asymmetry', 'rotation', 'shear'}
-eng. probe_geometry_model = {};  % list of free parameters in the geometry model, choose from: {'scale', 'asymmetry', 'rotation', 'shear'}
-eng. probe_position_error_max = inf; % maximal expected random position errors, probe prositions are confined in a circle with radius defined by probe_position_error_max and with center defined by original positions scaled by probe_geometry_model
+eng. probe_geometry_model = {};       % list of free parameters in the geometry model, choose from: {'scale', 'asymmetry', 'rotation', 'shear'}
+eng. probe_position_error_max = inf;  % maximal expected random position errors, probe prositions are confined in a circle with radius defined by probe_position_error_max and with center defined by original positions scaled by probe_geometry_model
 eng. apply_relaxed_position_constraint = false; % added by YJ. Apply a relaxed constraint to probe positions. default = true. Set to false if there are big jumps in positions.
 eng. update_pos_weight_every = inf; % added by YJ. Allow position weight to be updated multiple times. default = inf: only update once.
 
@@ -270,7 +264,7 @@ eng. regularize_layers = 1;           % multilayer extension: 0<R<<1 -> apply re
 eng. preshift_ML_probe = false;       % multilayer extension: if true, assume that the provided probe is reconstructed in center of the sample and the layers are centered around this position 
 eng. layer4pos = [];                  % Added by ZC. speficy which layer is used for position correction ; if empty, then default, ceil(Nlayers/2)
 eng. init_layer_select = [];          % Added by YJ. Select layers in the initial object for pre-processing. If empty (default): use all layers.
-eng. init_layer_preprocess = '';   % Added by YJ. Specify how to pre-process initial layers
+eng. init_layer_preprocess = '';      % Added by YJ. Specify how to pre-process initial layers
                                       % '' or 'all' (default): use all layers (do nothing)
                                       % 'avg': average all layers 
                                       % 'interp': interpolate layers using spline method. Need to specify desired depths in init_layer_interp
@@ -291,7 +285,7 @@ eng. probe_fourier_shift_search = inf; % iteration number from which the engine 
 eng. estimate_NF_distance = inf;       % iteration number from which the engine will: try to estimate the nearfield propagation distance using gradient descent optimization  
 eng. detector_rotation_search = inf;   % iteration number from which the engine will: search for optimal detector rotation, preferably use with option mirror_scan = true , rotation of the detector axis with respect to the sample axis, similar as rotation option in the position refinement geometry model but works also for 0/180deg rotation shared scans 
 eng. detector_scale_search = inf;      % iteration number from which the engine will: refine pixel scale of the detector, can be used to refine propagation distance in ptycho 
-eng. variable_probe = true;           % Use SVD to account for variable illumination during a single (coupled) scan, see for more details:  Odstrcil, M. et al. Optics express 24.8 (2016): 8360-8369.
+eng. variable_probe = true;            % Use SVD to account for variable illumination during a single (coupled) scan, see for more details:  Odstrcil, M. et al. Optics express 24.8 (2016): 8360-8369.
 eng. variable_probe_modes = 1;         % OPRP settings , number of SVD modes using to describe the probe evolution. 
 eng. variable_probe_smooth = 0;        % OPRP settings , enforce of smooth evolution of the OPRP modes -> N is order of polynomial fit used for smoothing, 0 == do not apply any smoothing. Smoothing is useful if only a smooth drift is assumed during the ptycho acquisition 
 eng. variable_intensity = false;       % account to changes in probe intensity
@@ -312,42 +306,6 @@ eng.save_results_every = Niter_save_results;
 eng.save_images ={'obj_ph_stack','obj_ph_sum','probe'};
 eng.extraPrintInfo = strcat('PSO');
 
-% Deconvolution engine
-p. deconvolve = true; %true;
-p. deconvolve_iter_start = 10;
-p. deconv_final_iter = Niter;
-p. deconv_weight = 0.6;
-p. multislice_deconvolution = false;
-p. kernel_type = 'arbitrary';
-p. output_kernel = 'real';
-
-% initialize all parameters for each slice (if p. multislice_deconvolution is true)
-p. kernel_size = 3;
-p. kernel_params = 1/9 * ones(1,9); %[2];
-p. kernel_params_lb = zeros(1,9);
-p. kernel_params_ub = ones(1,9);
-p. A_linear_ineq_constr = [];
-p. b_linear_ineq_contsr = [];
-p. A_linear_eq_constr = ones(1,9); %[];
-p. b_linear_eq_contsr = 1; %[];
-p. nonlinear_constr = [];
-p. deconvlucy_iters = 15;
-p. kernel_residual_style = false;
-p. smooth_kernel = false;
-p. smooth_kernel_width = 2;
-p. SNRt = 0.5; %0.1;
-p. damping_threshold = 10;
-p. correlation_threshold = 0.55;
-p. mask_threshold = 0.5;
-p. thickring = 1;             % thick ring in Fourier domain
-p. auto_binning = false;      % bin FRC before calculating rings, it makes calculations faster 
-p. max_rings = 200;           % maximal number of rings if autobinning is used 
-p. freq_thr = 0.05;
-
-p. FSC_evals = 1000;
-p. fminsearch_evals = 1000;
-p. resolution_tol = 1e-4;
-
 resultDir = strcat(p.base_path,sprintf(p.scan.format, p.scan_number),'/roi',p.scan.roi_label,'/');
 [eng.fout, p.suffix] = generateResultDir(eng, resultDir);
 
@@ -355,7 +313,7 @@ resultDir = strcat(p.base_path,sprintf(p.scan.format, p.scan_number),'/roi',p.sc
 [p, ~] = core.append_engine(p, eng);    % Adds this engine to the reconstruction process
 
 %% refined reconstruction at full resolution
-eng. number_iterations = Niter;          % number of iterations for selected method 
+eng. number_iterations = Niter;        % number of iterations for selected method 
 eng. asize_presolve = [];              % crop data to "asize_presolve" size to get low resolution estimate that can be used in the next engine as a good initial guess 
 eng. grouping = 32;                    % size of processed blocks, larger blocks need more memory but they use GPU more effeciently, !!! grouping == inf means use as large as possible to fit into memory 
                                        % * for hPIE, ePIE, MLs methods smaller blocks lead to faster convergence, 

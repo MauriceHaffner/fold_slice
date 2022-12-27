@@ -6,7 +6,7 @@
 % different folder from fold_slice 
 
 %% Step 2: load data
-data_dir = '/users/stud/haffnerm/Ptychoshelves/data/'; %change this
+data_dir = '/users/stud/haffnerm/Ptychoshelves/data/';
 load('/users/stud/haffnerm/Ptychoshelves/data/sample_data_PrScO3.mat');
 
 %% Step 3: go back to .../fold_slice/ptycho and pre-process data
@@ -40,7 +40,7 @@ h5create(strcat(save_dir,saveName), '/dp', size(dp),'ChunkSize',[size(dp,1), siz
 h5write(strcat(save_dir,saveName), '/dp', dp)
 
 %% Step 5: prepare initial probe
-dx=1/Np_p(1)/dk; %% pixel size in real space (angstrom)
+dx=1/Np_p(1)/dk; % pixel size in real space (angstrom)
 
 par_probe = {};
 par_probe.df = defocus;
