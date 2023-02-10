@@ -24,6 +24,7 @@ function [self, probe, obj_proj, psi] = get_forward_model(self, obj_proj, par, c
     import engines.GPU_MS.shared.*
     import engines.GPU_MS.GPU_wrapper.*
     import engines.GPU_MS.LSQML.*
+    import engines.debluring.*
     import math.*
     import utils.*
     import plotting.*
@@ -91,14 +92,14 @@ function [self, probe, obj_proj, psi] = get_forward_model(self, obj_proj, par, c
    % At this point, psi is the exit wave after the last object layer
    % Now propagate the wave function to far-field (detector) plane
    % This is same as using fwd_fourier_proj w. distance = inf and no camera angle refinement 
-   if isfield(par.p,'convolution_kernel')
-        import engines.debluring.*
-   end
+
    % Apply an extra convolution layer to the exit wave to simulate vibrations or other noise in the reconstruction
    % to keep probe and object more clear. Convolution will be reversed at backpropagation of chi. 
    for ll= 1:max(par.object_modes, par.probe_modes)
-        if isfield(par.p,'convolution_kernel')
-            psi{ll} = fft2_safe(convn(psi{ll},par.p.convolution_kernel,'same'));% fully farfield + convolution  
+        if (isfield(par.p,'convolution_kernel') && (par.p.deconvolve))
+            psi{ll} = fft2_safe(psi{ll}) .* conj(fft_kernel([size(psi{ll},1),size(psi{ll},2)],par.p.convolution_kernel) ./ abs(fft_kernel([size(psi{ll},1),size(psi{ll},2)],par.p.convolution_kernel)));
+            %psi{ll} = fft2_safe(convn(psi{ll},par.p.convolution_kernel,'same'));% fully farfield + convolution
+            %psi{ll} = fft2_safe(psi{ll});
         else
             psi{ll} = fft2_safe(psi{ll}); % fully farfield
         end        

@@ -429,9 +429,19 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         self = regulation_multilayers(self, par, cache);
     end
   
-    if all(isfield(par.p, {'deconvolve','deconvolve_iter_start'})) && par.p.deconvolve && mod(iter,par.p.deconvolve_iter_start) == 0
+    if all(isfield(par.p, {'deconvolve','deconvolve_iter_start'})) && par.p.deconvolve && mod(iter,par.p.deconvolve_iter_start) == 0 && iter >= par.p.deconvolve_iter_start
         verbose(1,'Applying deconvolution to the reconstruction result.')
-        self = apply_deconvolution(self, par, cache, iter);
+        self = apply_deconvolution(self, par, cache);
+    end
+
+    if all(isfield(par.p, {'apply_net','net'})) && par.p.apply_net && mod(iter,par.p.apply_net_iter_start) == 0 && iter >= par.p.apply_net_iter_start
+        verbose(1,'Applying denoising network to the reconstruction result.')
+        self = apply_net(self,par,cache);
+    end
+
+    if all(isfield(par.p, {'adjust_gamma','gamma'})) && par.p.adjust_gamma && mod(iter,par.p.adjust_gamma_start) == 0 && iter >= par.p.adjust_gamma_start
+        verbose(1,'Adjusting gamma of the reconstruction result.')
+        self = adjust_gamma(self,par,cache);
     end
 
     if isfield(par.p, 'sharpening') && par.p.sharpening && iter == par.number_iterations
