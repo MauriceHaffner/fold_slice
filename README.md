@@ -1,6 +1,6 @@
 # fold_slice
 
-This is Yi Jiang's customized code for X-ray/electron ptychography and tomography/laminography.
+This is Yi Jiang's customized code for X-ray/electron ptychography and tomography/laminography. In addition a subdirectory ('ptycho/+engines/+debluring') was added by Maurice Haffner for the masters project 'Computational nosie correction in 4D-STEM imaging'.
 
 The package is built upon the Matlab code developed by the Science IT and the coherent X-ray scattering (CXS) groups at Paul Scherrer Institut, Switzerland:
 https://www.psi.ch/en/sls/csaxs/software. Copyright and license issues should follow the agreements (see below) and/or refer to their website.
@@ -36,6 +36,8 @@ Z. Chen, Y. Jiang, Y. Shao, M. E. Holtz, M. Odstrčil, M. Guizar-Sicairos, I. Ha
 | TV regularization on object phase| :heavy_check_mark: | :heavy_check_mark: |
 | Grid artifact removal| :heavy_check_mark: | :heavy_multiplication_x: |
 | Automatic parameter selection| :heavy_check_mark: | :heavy_multiplication_x: |
+
+5. A collection of functions for resolution improvement and noise correction (see '/+debluring').
 
 # Other ptychography software
 If you don't own Matlab or want to explore other ptychography software. Here are some public repositories:
