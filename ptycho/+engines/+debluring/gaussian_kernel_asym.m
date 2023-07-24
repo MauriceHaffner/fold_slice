@@ -1,5 +1,7 @@
 function kernel = gaussian_kernel_asym(size,params)
 
+    % Make a asymmetric in x and y gaussian kernel
+    
     sigma_x = params(1);
     sigma_y = params(2);
 

@@ -1,5 +1,7 @@
 function output = image_split(image)
 
+    % Make a 2D even-odd split of an image
+    
     image_size = size(image);
     sub_image_size = image_size;
     sub_image_size(2:end) = ceil(sub_image_size(2:end)/2);

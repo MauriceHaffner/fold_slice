@@ -2,6 +2,8 @@
 
 function output_kernel = init_kernel(p,size, params, varargin)
 
+    % Intialize a kernel for a given parameter vector
+    
     import engines.debluring.*
     switch p.kernel_type
 

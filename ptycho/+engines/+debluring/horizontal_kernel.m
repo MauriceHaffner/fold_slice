@@ -1,5 +1,7 @@
 function kernel = horizontal_kernel(size)
 
+    % Make a kernel with only horizontal non-zero elements
+    
     if (mod(size,2)==0)
         size = size + 1;
     end

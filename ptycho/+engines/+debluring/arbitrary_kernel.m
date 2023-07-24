@@ -1,7 +1,6 @@
 function kernel = arbitrary_kernel(size,param)
 
-kernel = reshape(param, [size,size]);
-
-% kernel = kernel / sum(kernel,'all'); <--- specify this for contsrained optimization by Aeq = ones(lenght(params)), beq = 1
+    % Reshape a an arbitray paramter vector to the desired kernel size
+    kernel = reshape(param, [size,size]);
 
 end

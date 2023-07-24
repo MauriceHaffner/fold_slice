@@ -1,5 +1,7 @@
 function kernel = exponential_kernel(size,params)
 
+    % Make a symmetric in x and y exponentially decaying kernel
+    
     sigma = params(1);
     a = params(2);
 

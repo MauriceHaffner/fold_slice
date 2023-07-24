@@ -1,5 +1,6 @@
 function kernel_inv = inverse_kernel(p,target_size,kernel)
     
+    % Compute the inverse of a given kernel. Optionally apply smoothing.
     import engines.debluring.*
 
     padded_kernel = pad_kernel(target_size,kernel);

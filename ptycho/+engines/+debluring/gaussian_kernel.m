@@ -1,5 +1,7 @@
 function kernel = gaussian_kernel(size,params)
 
+    % Make a asymmetric in x and y gaussian kernel
+    
     sigma = params(1);
     
     if (mod(size,2)~=1)

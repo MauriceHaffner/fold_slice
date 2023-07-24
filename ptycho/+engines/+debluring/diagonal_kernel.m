@@ -1,5 +1,6 @@
 function kernel = diagonal_kernel(size,params)
    
+    % Make a kernel with only non-zero diagonal elements
     import engines.debluring.*
     weight= params(1);
     if (mod(size,2)==0)

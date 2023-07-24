@@ -1,6 +1,6 @@
 function padded_kernel = pad_kernel(target_size,kernel)
 
-    %keyboard
+    % Pad a kernel with zeros
     if (ndims(kernel) == 2)
         padding_size = floor((target_size - size(kernel))/2);
         padded_kernel = padarray(kernel, [padding_size(1), padding_size(2)], 0, 'both');

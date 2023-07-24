@@ -1,6 +1,8 @@
-% generate an ensemble of different kernel
-% used to determine best kernel out of selection
+% Deprecated
 function output = choose_from_kernel_ensemble(p, image)
+
+    % Generate an ensemble of different kernel
+    % and choose the one that improves the resolution at most
 
     import engines.debluring.*
     
