@@ -171,11 +171,16 @@ function [self, cache, fourier_error] =  LSQML(self,par,cache,fourier_error,iter
         % Now propagate chi back to the last object layer 
         % This is same as using back_fourier_proj w. distance = inf and no camera angle refinement 
         for ll= 1:max(par.object_modes, par.probe_modes)
-            if (isfield(par.p,'convolution_kernel') && (par.p.deconvolve))
-                %chi{ll} = ifft2_safe(chi{ll}) .* conj(fft_kernel([size(chi{ll},1),size(chi{ll},2)],par.p.convolution_kernel)) ./ abs(fft_kernel([size(chi{ll},1),size(chi{ll},2)],par.p.convolution_kernel)));
-                chi{ll} = ifft2_safe(convn(chi{ll},par.p.convolution_kernel,'same'));
-            else
-        	    chi{ll} = ifft2_safe(chi{ll});  % fully farfield inverse fft
+            if (isfield(par.p,'convolution_kernel') && (par.p.bw_propagation_convolution) && (par.p.deconvolve || par.p.apply_net))
+                if (isfield(par.p,'optimal_kernel'))
+                    chi{ll} = ifft2_safe(convn(chi{ll},par.p.optimal_kernel,'same'));
+                else    
+                    chi{ll} = ifft2_safe(convn(chi{ll},par.p.convolution_kernel,'same'));
+                end    
+            elseif (isfield(par.p,'convolution_kernel') && (par.p.bw_propagation_deconvolution) && (par.p.deconvolve || par.p.apply_net))
+        	    chi{ll} = ifft2_safe(chi{ll}) .* conj(fft_kernel([size(chi{ll},1),size(chi{ll},2)],par.p.convolution_kernel)) ./ abs(fft_kernel([size(chi{ll},1),size(chi{ll},2)],par.p.convolution_kernel)+0.0001);
+            else    
+                chi{ll} = ifft2_safe(chi{ll});  % fully farfield inverse fft
             end
         end
 

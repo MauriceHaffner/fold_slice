@@ -76,14 +76,16 @@ function Err = get_fourier_error(modF, aPsi, Noise,Mask, likelihood)
     import math.*
     
     if ~exist('likelihood', 'var'); likelihood = 'L1'; end
-
-    
+   
     likelihood = lower(likelihood); 
     % USE Gfun IN ORDER TO MAKE IT FASTER ON GPU 
     if isempty(Mask) && isempty(Noise)
         switch likelihood
-            case 'l1', Err = Gfun(@get_err,modF, aPsi);
+            case 'l1', Err = Gfun(@get_err,modF, aPsi);            
             case 'poisson', Err = Gfun(@get_loglik,modF, aPsi);
+            % otherwise
+            %     n = str2num(likelihood(end));                 
+            %     Err = Gfun(@get_err_n, modF, aPsi,n);               
         end
     elseif ~isempty(Mask) && isempty(Noise)
         switch likelihood
@@ -98,8 +100,10 @@ function Err = get_fourier_error(modF, aPsi, Noise,Mask, likelihood)
     switch likelihood
         case 'l1',  Err = sqrt(squeeze(mean2(Err)))';
         case 'poisson',  Err = squeeze(mean2(Err))';
-        otherwise, error('Unsupported likelihood')
-    end  
+        % otherwise
+        %     n = str2num(likelihood(end));
+        %     Err = squeeze(mean2(Err)).^(1/n);
+    end 
 end
 
 function L = get_loglik(modF, aPsi)
@@ -112,6 +116,14 @@ function L = get_loglik_masked(modF, aPsi,Mask)
     aPsi2 = aPsi.^2;
     L = -(1-Mask) .* (modF2 .* log(aPsi2+1e-6) - aPsi2) ;
 end
+% function L = get_loglik_masked2(modF, aPsi, kernel, n)
+%     import engines.debluring.*
+%     gauss_mask = fft_kernel(size(modF),kernel);
+%     gauss_mask = abs(gauss_mask) / sum(abs(gauss_mask),[],"all");
+%     modFn = modF.^n;
+%     aPsin = aPsi.^n;   
+%     L = -(gauss_mask) .* (modFn .* log(aPsin+1e-6) - aPsin);
+% end
 function E = get_err(modF, aPsi)
      E = (modF-aPsi).^2 / (0.5)^2;   % 0.5 is correction for the Poisson noise (if we expect single photon precision)
 end
@@ -124,3 +136,6 @@ end
 function E = get_err_noise_mask(modF, aPsi, Mask, Noise)
      E = (modF-aPsi).^2 ./ Noise.^2 .* (1-Mask);
 end
+% function E = get_err_n(modF, aPsi,n)
+%     E = (modF-aPsi).^n / (0.5)^n;   % 0.5 is correction for the Poisson noise (if we expect single photon precision)
+% end

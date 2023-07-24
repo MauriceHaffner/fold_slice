@@ -96,11 +96,16 @@ function [self, probe, obj_proj, psi] = get_forward_model(self, obj_proj, par, c
    % Apply an extra convolution layer to the exit wave to simulate vibrations or other noise in the reconstruction
    % to keep probe and object more clear. Convolution will be reversed at backpropagation of chi. 
    for ll= 1:max(par.object_modes, par.probe_modes)
-        if (isfield(par.p,'convolution_kernel') && (par.p.deconvolve))
-            psi{ll} = fft2_safe(psi{ll}) .* conj(fft_kernel([size(psi{ll},1),size(psi{ll},2)],par.p.convolution_kernel) ./ abs(fft_kernel([size(psi{ll},1),size(psi{ll},2)],par.p.convolution_kernel)));
-            %psi{ll} = fft2_safe(convn(psi{ll},par.p.convolution_kernel,'same'));% fully farfield + convolution
-            %psi{ll} = fft2_safe(psi{ll});
-        else
+        if (isfield(par.p,'convolution_kernel') && (par.p.fw_propagation_deconvolution) && (par.p.deconvolve || par.p.apply_net))
+            if (isfield(par.p,'optimal_kernel'))
+                %par.p.optimal_kernel_params
+                psi{ll} = fft2_safe(psi{ll}) .* conj(fft_kernel([size(psi{ll},1),size(psi{ll},2)],par.p.optimal_kernel) ./ abs(fft_kernel([size(psi{ll},1),size(psi{ll},2)],par.p.optimal_kernel)+0.0001));
+            else  
+                psi{ll} = fft2_safe(psi{ll}) .* conj(fft_kernel([size(psi{ll},1),size(psi{ll},2)],par.p.convolution_kernel) ./ abs(fft_kernel([size(psi{ll},1),size(psi{ll},2)],par.p.convolution_kernel)+0.0001));
+            end
+        elseif (isfield(par.p,'convolution_kernel') && (par.p.fw_propagation_convolution) && (par.p.deconvolve || par.p.apply_net))
+            psi{ll} = fft2_safe(convn(psi{ll},par.p.convolution_kernel,'same'));% fully farfield + convolution
+        else 
             psi{ll} = fft2_safe(psi{ll}); % fully farfield
         end        
     end

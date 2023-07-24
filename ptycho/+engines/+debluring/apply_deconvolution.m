@@ -1,5 +1,5 @@
 % Apply deconvolution tho object and/or probe to overcome convolution and noise effects
-function self = apply_deconvolution(self, par, cache)
+function [self,par,cache] = apply_deconvolution(self, par, cache)
 
     import engines.debluring.*
     import engines.GPU_MS.GPU_wrapper.*
@@ -24,10 +24,11 @@ function self = apply_deconvolution(self, par, cache)
         keyboard    
     end  
     par.p.optimal_kernel = output_cell{1};
-    par.p.optimal_kernel_params = output_cell{2};    
+    par.p.optimal_kernel_params = output_cell{2};
+    par.p.kernel_error = output_cell{3};      
     % now apply the deconvolution to the whole object (including non-ROI)
     % it appeared that applying deconvolution only on the imaginary part works best
-    % maybe becausse of WPOA and different magnitudes of imaginary and real part
+    % because of WPOA (very different magnitudes of imaginary and real part)
     if par.p.deconvolve_object
         object = Ggather(self.object{1});
         N_obj = size(object);
@@ -75,7 +76,8 @@ function self = apply_deconvolution(self, par, cache)
             keyboard    
         end
         par.p.optimal_kernel = output_cell{1};
-        par.p.optimal_kernel_params = output_cell{2};      
+        par.p.optimal_kernel_params = output_cell{2};
+        par.p.kernel_error = outputcell{3};    
         phase_real = real(probe(:,:,:,2));
         phase_imag = imag(probe(:,:,:,2));
         phase_imag_deconv = deconvlucy(phase_imag, par.p.optimal_kernel,par.p.deconvlucy_iters,par.p.SNRt);

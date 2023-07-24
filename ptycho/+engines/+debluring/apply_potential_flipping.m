@@ -1,7 +1,7 @@
 % Apply potential flipping to the imaginary part of the object for pixel
 % that fall below a threshold value. Aimed to increase separability of close
 % features in the object.
-function self = apply_potential_flipping(self, par, cache, iter)
+function [self,par,cache] = apply_potential_flipping(self, par, cache, iter)
 
     import engines.debluring.*
     import engines.GPU_MS.GPU_wrapper.*
@@ -12,17 +12,18 @@ function self = apply_potential_flipping(self, par, cache, iter)
     object = Ggather(self.object{1});
     N_obj = size(object);
     object = zeros(N_obj(1),N_obj(2),par.Nlayers);
-    laplace_kernel = [-1,-1,-1;-1,8,-1;-1,-1,-1];
     for ll = 1 : par.Nlayers
         object(:,:,ll) = Ggather(self.object{ll});
-    end
-    object_imag = imag(object);
+    end    
     cell_of_GPU_arrays = {};
     for ll = 1 : par.Nlayers
-        mean_imag = mean(object(cache.objectROI{:},ll),'all');
-        flip_idx = find(object_imag(:,:,ll) < mean_imag * par.p.flip_threshold & object_imag(:,:,ll) > 0);
-        object(flip_idx) = object(flip_idx,ll) - 2 * 1j * object_imag(flip_idx,ll);
-        cell_of_GPU_arrays{end+1} = Garray(object(:,:,ll));
+        object_imag = imag(object(:,:,ll));
+        std_imag = std(object_imag,0,"all");
+        mean_imag = mean(object_imag,"all");
+        max_imag = max(object_imag,[],'all');
+        flip_idx = find((object_imag < 0.3 * max_imag));%max_imag * par.p.flip_threshold|| (object_imag > mean_imag + std_imag)- 0.8 * std_imag
+        object_imag(flip_idx) = -1 * object_imag(flip_idx);
+        cell_of_GPU_arrays{end+1} = Garray(object(:,:,ll) + 1j * object_imag);
     end  
     self.object = cell_of_GPU_arrays;   
 

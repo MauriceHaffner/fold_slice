@@ -18,7 +18,7 @@ function self = adjust_gamma(self,par,cache)
         Im = imadjust(mat2gray(angle(object(:,:,idx))),[],[],par.p.gamma);
         max_angle = max(angle(object(:,:,idx)),[],"all");
         min_angle = min(angle(object(:,:,idx)),[],"all");        
-        cell_of_GPU_arrays{end+1} = Garray(abs(object(:,:,idx)) .* exp (1j * (Im*max_angle + min_angle)));
+        cell_of_GPU_arrays{end+1} = Garray(abs(object(:,:,idx)) .* exp (1j * (Im*(max_angle-min_angle) + min_angle)));
     end  
     self.object = cell_of_GPU_arrays;
     
