@@ -90,6 +90,11 @@ else
             % to p.object
             p.object{ii} = object;
         end
+
+        % object_guess = p.object{1};
+        % %object_guess(:,:,2) = ones(size(object_guess(:,:,2)));
+        % object_guess(:,:,1) = imrotate(real(object_guess(:,:,1)),-15,'bilinear','crop') + 1j * imrotate(imag(object_guess(:,:,1)),-15,'bilinear','crop');
+        % p.object{1} = object_guess;
         
         % now let's check the object modes
         mode_diff = p.object_modes-size(object,3);

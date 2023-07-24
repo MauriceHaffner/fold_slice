@@ -11,7 +11,7 @@ load('/users/stud/haffnerm/Ptychoshelves/data/sample_data_PrScO3.mat');
 
 %% Step 3: go back to .../fold_slice/ptycho and pre-process data
 addpath(strcat(pwd,'/utils_electron/'))
-Np_p = [256,256]; % size of diffraction patterns used during reconstruction. can also pad to 256
+Np_p = [256,256]; % size of diffraction patterns used during reconstruction. can also pad
 % pad cbed
 [ndpy,ndpx,npy,npx]=size(dp);
 if ndpy < Np_p(1) % pad zeros
@@ -22,7 +22,7 @@ end
 
 dp = dp / ADU; % convert to electron count
 dp=reshape(dp,Np_p(1),Np_p(2),[]);
-Itot=mean(squeeze(sum(sum(dp,1),2))); %need this for normalizting initial probe
+Itot=mean(squeeze(sum(sum(dp,1),2))); %need this for normalizing initial probe
 
 % calculate pxiel size (1/A) in diffraction plane
 [~,lambda]=electronwavelength(voltage);

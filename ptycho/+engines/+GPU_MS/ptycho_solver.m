@@ -428,10 +428,14 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
     if par.regularize_layers > 0 && par.Nlayers > 1 %  && mod(iter, 2) == 1, ## change from Nlayers > 1 to Nlayers > 2 by Zhen Chen
         self = regulation_multilayers(self, par, cache);
     end
-  
+
+    if all(isfield(par.p,{'sparsify_object','sparsify_weight','sparsify_depth'})) && par.p.sparsify_object && (par.p.sparsify_weight ~= 0) && mod(iter,par.p.sparsify_iter_start) == 0 && iter >= par.p.sparsify_iter_start
+        self = sparsify_object(self,par,cache);
+    end
+     
     if all(isfield(par.p, {'deconvolve','deconvolve_iter_start'})) && par.p.deconvolve && mod(iter,par.p.deconvolve_iter_start) == 0 && iter >= par.p.deconvolve_iter_start
         verbose(1,'Applying deconvolution to the reconstruction result.')
-        self = apply_deconvolution(self, par, cache);
+        [self,par,cache] = apply_deconvolution(self, par, cache);
     end
 
     if all(isfield(par.p, {'apply_net','net'})) && par.p.apply_net && mod(iter,par.p.apply_net_iter_start) == 0 && iter >= par.p.apply_net_iter_start
@@ -449,9 +453,11 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         self = apply_sharpening(self, par, cache, iter);
     end
 
-    if isfield(par.p, 'potential_flipping') && par.p.potential_flipping && iter == par.number_iterations
-        verbose(1,'Applying sharpening to the reconstruction result.')
-        self = apply_sharpening(self, par, cache, iter);
+    if all(isfield(par.p, {'potential_flipping','flip_iterations'})) && par.p.potential_flipping && any(iter == par.p.flip_iterations,'all')
+        if (par.Np_p_presolve(1) == 200)
+            verbose(0,'Applying potential flipping')
+            [self,par,cache] = apply_potential_flipping(self, par, cache, iter);
+        end
     end
     
   % constraint periodic along propagation, by Zhen Chen.
@@ -645,6 +651,22 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         % store regularization parameters
         if par.amplitude_threshold_object<inf
             p.reg.amplitude_threshold_object = par.amplitude_threshold_object;
+        end
+
+        % store parameters related to deconvolution processing
+        if isfield(par.p, 'deconvolve') && par.p.deconvolve
+            p.kernel_type = par.p.kernel_type;
+            p.kernel_size = par.p.kernel_size;
+            if isfield(par.p,'optimal_kernel')
+                if ~isfield(par.p,'optimal_kernel_params_list')
+                    p.optimal_kernel_params_list = [];
+                    p.kernel_error_list = [];
+                end
+                p.kernel = par.p.optimal_kernel;
+                p.optimal_kernel_params_list(end+1) = par.p.optimal_kernel_params;
+                p.kernel_error_list(end+1) = par.p.kernel_error;
+                verbose(0,'Optimal kernel parameter is %3.3g | Error: %3.3g', par.p.optimal_kernel_params,par.p.kernel_error)
+            end
         end
 
         % store parameters related to multi-slice

@@ -82,6 +82,7 @@ function [beta_xi, find_xi_step] =  gradient_descent_xi_solver(self,modF, aPsi2,
     import engines.GPU_MS.GPU_wrapper.*
  
     find_xi_step = true;
+    use_non_binary_mask = false;
 
     %% !! use precached values if the change is small 
     if ~find_xi_step
@@ -91,7 +92,14 @@ function [beta_xi, find_xi_step] =  gradient_descent_xi_solver(self,modF, aPsi2,
             mask = 0;
         end
         for i = 1:2
-        [nom, denom] = Gfun(@get_coefs, aPsi2,modF,R,mask,beta_xi);
+        if (use_non_binary_mask)
+            import engines.debluring.*
+            gauss_mask = fft_kernel([size(modF,1),size(modF,2)],[0.0318, 0.0375, 0.0397, 0.0375, 0.0318; 0.0375, 0.0443, 0.0469, 0.0443, 0.0375; 0.0397, 0.0469, 0.0495, 0.0469, 0.0397; 0.0375, 0.0443, 0.0469, 0.0443, 0.0375; 0.0318, 0.0375, 0.0397, 0.0375, 0.0318]);%[0.0113,0.0838,0.0113; 0.0838,0.6193,0.0838; 0.0113,0.0838, 0.0113]
+            gauss_mask = 1 - 5 * abs(gauss_mask) / sum(abs(gauss_mask),"all");
+            [nom, denom] = Gfun(@get_coefs2, aPsi2,modF,R,gauss_mask,beta_xi);
+        else
+            [nom, denom] = Gfun(@get_coefs, aPsi2,modF,R,mask,beta_xi);
+        end
         % avoid oscilations of the solution 
         beta_xi = beta_xi*0.5 +  0.5* Ggather(sum2(nom) ./ sum2(denom));
 
@@ -114,4 +122,11 @@ function [nom, denom,W] = get_coefs(aPsi2,modF,R,mask,alpha)
     W = 1-mask;
     nom = -W.*chi.* (modF2./ (1-alpha.*chi) - aPsi2);
     denom = W.*aPsi2.*chi.^2;
+end
+
+function [nom, denom] = get_coefs2(aPsi2,modF,R,gauss_mask,alpha)
+    modF2 = modF.^2;
+    chi = 1-R;
+    nom = -gauss_mask.*chi.* (modF2./ (1-alpha.*chi) - aPsi2);
+    denom = gauss_mask.*aPsi2.*chi.^2;
 end
