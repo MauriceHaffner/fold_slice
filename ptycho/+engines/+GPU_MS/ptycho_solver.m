@@ -429,29 +429,32 @@ for iter =  (1-par.initial_probe_rescaling):par.number_iterations
         self = regulation_multilayers(self, par, cache);
     end
 
-    if all(isfield(par.p,{'sparsify_object','sparsify_weight','sparsify_depth'})) && par.p.sparsify_object && (par.p.sparsify_weight ~= 0) && mod(iter,par.p.sparsify_iter_start) == 0 && iter >= par.p.sparsify_iter_start
-        self = sparsify_object(self,par,cache);
-    end
+    % DEPRECATED
+    % if all(isfield(par.p,{'sparsify_object','sparsify_weight','sparsify_depth'})) && par.p.sparsify_object && (par.p.sparsify_weight ~= 0) && mod(iter,par.p.sparsify_iter_start) == 0 && iter >= par.p.sparsify_iter_start
+    %     self = sparsify_object(self,par,cache);
+    % end
      
     if all(isfield(par.p, {'deconvolve','deconvolve_iter_start'})) && par.p.deconvolve && mod(iter,par.p.deconvolve_iter_start) == 0 && iter >= par.p.deconvolve_iter_start
         verbose(1,'Applying deconvolution to the reconstruction result.')
         [self,par,cache] = apply_deconvolution(self, par, cache);
     end
 
-    if all(isfield(par.p, {'apply_net','net'})) && par.p.apply_net && mod(iter,par.p.apply_net_iter_start) == 0 && iter >= par.p.apply_net_iter_start
-        verbose(1,'Applying denoising network to the reconstruction result.')
-        self = apply_net(self,par,cache);
-    end
+    % DEPRECATED
+    % if all(isfield(par.p, {'apply_net','net'})) && par.p.apply_net && mod(iter,par.p.apply_net_iter_start) == 0 && iter >= par.p.apply_net_iter_start
+    %     verbose(1,'Applying denoising network to the reconstruction result.')
+    %     self = apply_net(self,par,cache);
+    % end
 
     if all(isfield(par.p, {'adjust_gamma','gamma'})) && par.p.adjust_gamma && mod(iter,par.p.adjust_gamma_start) == 0 && iter >= par.p.adjust_gamma_start
         verbose(1,'Adjusting gamma of the reconstruction result.')
         self = adjust_gamma(self,par,cache);
     end
 
-    if isfield(par.p, 'sharpening') && par.p.sharpening && iter == par.number_iterations
-        verbose(1,'Applying sharpening to the reconstruction result.')
-        self = apply_sharpening(self, par, cache, iter);
-    end
+    % DEPRECATED
+    % if isfield(par.p, 'sharpening') && par.p.sharpening && iter == par.number_iterations
+    %     verbose(1,'Applying sharpening to the reconstruction result.')
+    %     self = apply_sharpening(self, par, cache, iter);
+    % end
 
     if all(isfield(par.p, {'potential_flipping','flip_iterations'})) && par.p.potential_flipping && any(iter == par.p.flip_iterations,'all')
         if (par.Np_p_presolve(1) == 200)
