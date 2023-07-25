@@ -1,6 +1,6 @@
 # fold_slice
 
-This is Yi Jiang's customized code for X-ray/electron ptychography and tomography/laminography. In addition a subdirectory ('ptycho/+engines/+debluring') was added by Maurice Haffner for the masters project 'Computational nosie correction in 4D-STEM imaging'.
+This is Yi Jiang's customized code for X-ray/electron ptychography and tomography/laminography. In addition a subdirectory ('ptycho/+engines/+debluring') was added by Maurice Haffner for the masters project 'Computational nosie correction in 4D-STEM imaging'. This extension treats the correction of noise and phonon effects by deconvolution, gamma adjustment and potential flipping. Each of the methods is implemented both as post- and in-situ processing. An example for the data generation and usage of this methods is presented in /fold_slice/ptycho/examples/Computational_noise_correction_in_4D_STEM.
 
 The package is built upon the Matlab code developed by the Science IT and the coherent X-ray scattering (CXS) groups at Paul Scherrer Institut, Switzerland:
 https://www.psi.ch/en/sls/csaxs/software. Copyright and license issues should follow the agreements (see below) and/or refer to their website.
